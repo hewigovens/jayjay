@@ -12,6 +12,10 @@ Load this file when changing the public site at [jayjay.hewig.dev](https://jayja
 - `docs/css/`, `docs/js/`, `docs/imgs/`, and the site icons are shared website assets.
 - `docs/appcast.xml` is the Sparkle update feed, not website content. Load [Release](release.md) before changing it.
 
+## Shared Head, Nav, And Footer
+
+Every page under `docs/` carries its shared `<head>` tags, nav, and footer between `<!-- site:head -->`, `<!-- site:nav -->`, and `<!-- site:footer -->` markers. `scripts/site-chrome.mjs` defines them once, and `just site` rewrites each page's marked regions with its relative paths, stylesheets, and active section. A page keeps only its own charset, title, description, canonical, Open Graph, and JSON-LD tags outside the head region. Change the shared tags, nav, footer, or their links there, never inside a page; `just site --check` fails on a hand-edited region. A new page copies the three marker pairs and runs `just site`.
+
 ## Translated Landing Pages
 
 `docs/index.html` is the template; never edit the generated pages. `site/<locale>.ftl` holds the translations, kept apart from the app catalog because `crates/jayjay-i18n` compiles every message into the app. The comment above each message is its English source, so `just site` fails on any string left missing or unused after an English edit. Update those files, then run `just site`; `just site --check` is the CI gate in Site CI. Write copy the way a native speaker would rather than mirroring the English sentence by sentence; keep the facts, commands, and UI labels exact. Take terms from `crates/jayjay-i18n/locales/` so the page matches the app. A new page section with a new markup shape needs a matching pass in `scripts/site.mjs`. Keep each page's `hreflang` link and sitemap `<loc>`.

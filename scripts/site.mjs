@@ -1,13 +1,31 @@
 #!/usr/bin/env node
-// Generates the translated landing pages from docs/index.html and site/<locale>.ftl; --check fails when they are stale.
+// Expands the shared head, nav and footer into every page under docs/, then generates the translated landing pages from docs/index.html and site/<locale>.ftl; --check fails when any page is stale.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as chrome from './site-chrome.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const docs = path.join(root, 'docs');
 const check = process.argv.includes('--check');
-const source = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
 const ogLocales = { ja: 'ja_JP', 'zh-Hans': 'zh_CN', 'zh-Hant': 'zh_TW' };
+const locales = Object.keys(ogLocales).map(lang => lang.toLowerCase());
+const pages = fs.readdirSync(docs, { recursive: true })
+  .filter(file => file.endsWith('.html') && !locales.includes(file.split(path.sep)[0]))
+  .map(file => file.split(path.sep).join('/'));
+const expanded = new Map(pages.map(file => {
+  const text = fs.readFileSync(path.join(docs, file), 'utf8');
+  for (const part of ['head', 'nav', 'footer']) {
+    const [open, close] = [`<!-- site:${part} -->`, `<!-- /site:${part} -->`];
+    if (text.split(open).length !== 2 || text.split(close).length !== 2 || text.indexOf(open) > text.indexOf(close)) {
+      console.error(`docs/${file} needs exactly one ${open} … ${close} region`);
+      process.exit(1);
+    }
+  }
+  const where = chrome.page(file);
+  return [file, text.replace(/<!-- site:(head|nav|footer) -->[\s\S]*?<!-- \/site:\1 -->/g, (m, part) => `<!-- site:${part} -->\n  ${chrome[part](where)}\n  <!-- /site:${part} -->`)];
+}));
+const source = expanded.get('index.html');
 const menuLabels = { ja: '日本語', 'zh-Hans': '简体', 'zh-Hant': '繁體' };
 const plain = html => html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&gt;/g, '>').replace(/&lt;/g, '<');
 
@@ -105,18 +123,23 @@ const fail = message => {
   failed = true;
 };
 
+function write(output, text) {
+  if (!check) {
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.writeFileSync(output, text);
+  } else if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== text) {
+    fail(`${path.relative(root, output)} is stale; run just site`);
+  }
+}
+
+for (const [file, text] of expanded) write(path.join(docs, file), text);
+
 for (const lang of Object.keys(ogLocales)) {
   const file = `${lang}.ftl`;
   const { page, missing, unused } = render(lang, parse(fs.readFileSync(path.join(root, 'site', file), 'utf8')));
   for (const key of missing) fail(`site/${file}: missing translation: ${key}`);
   for (const key of unused) fail(`site/${file}: unused translation: ${key}`);
   if (failed) continue;
-  const output = path.join(root, 'docs', lang.toLowerCase(), 'index.html');
-  if (!check) {
-    fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, page);
-  } else if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== page) {
-    fail(`${path.relative(root, output)} is stale; run just site`);
-  }
+  write(path.join(docs, lang.toLowerCase(), 'index.html'), page);
 }
 process.exit(failed ? 1 : 0);

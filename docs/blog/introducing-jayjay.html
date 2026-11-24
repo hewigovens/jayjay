@@ -2,12 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JayJay: a native jj client, and review tools for working with agents — JayJay</title>
   <meta name="description" content="A native Jujutsu client for macOS, Linux, and Windows, with review tools for coding agents: marks that survive rebases, agent triage, and a browser diff.">
-  <meta name="author" content="hewigovens">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://jayjay.hewig.dev/blog/introducing-jayjay.html">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="JayJay">
@@ -39,8 +35,13 @@
     }
   }
   </script>
+  <!-- site:head -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="hewigovens">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="../favicon.ico" sizes="32x32">
-  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,27 +50,30 @@
   <link rel="stylesheet" href="../css/help-common.css">
   <link rel="stylesheet" href="../css/guide.css">
   <link rel="stylesheet" href="../css/blog.css">
+  <!-- /site:head -->
 </head>
 
 <body class="guide-page blog-page">
+  <!-- site:nav -->
   <nav class="site-nav">
     <div class="wrap nav">
-      <a class="brand" href="../index.html"><img src="../icon.svg" alt="JayJay"> JayJay</a>
+      <a class="brand" href="../"><img src="../icon.svg" alt=""> JayJay</a>
       <div class="nav-right">
         <div class="nav-links">
-          <a href="../index.html#features">Features</a>
-          <a href="../index.html#shortcuts">Shortcuts</a>
-          <a href="../index.html#install">Install</a>
-          <a href="../index.html#faq">FAQ</a>
-          <a href="index.html" class="active">Blog</a>
+          <a href="../#features">Features</a>
+          <a href="../#shortcuts">Shortcuts</a>
+          <a href="../#install">Install</a>
+          <a href="../#faq">FAQ</a>
+          <a href="../blog/" class="active">Blog</a>
           <a href="../guide.html">Guide</a>
           <a class="nav-gh" href="https://github.com/hewigovens/jayjay"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>GitHub</a>
         </div>
         <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon"></span></button>
-        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest" data-install="../#install">Download</a>
       </div>
     </div>
   </nav>
+  <!-- /site:nav -->
   <header class="guide-container g-head">
     <div class="sec-label"><a href="index.html">Blog</a></div>
     <h1>JayJay: a native jj client, and review tools for working with agents</h1>
@@ -159,19 +163,26 @@
       </article>
     </div>
   </main>
+  <!-- site:footer -->
   <footer>
     <div class="wrap foot">
       <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a></p>
       <div class="foot-links">
-        <a href="../index.html">Home</a>
-        <a href="index.html">Blog</a>
+        <a href="../">Home</a>
+        <a href="../blog/">Blog</a>
+        <a href="../guide.html">Guide</a>
+        <a href="../tutorial/">Video tutorial</a>
+        <a href="https://diff.hewig.dev">JayJay Diff</a>
         <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
         <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
         <a href="https://discord.gg/ekknRNkVrT">Discord</a>
+        <a href="../privacy.html">Privacy</a>
       </div>
     </div>
   </footer>
+  <script src="../js/platform.js" defer></script>
+  <!-- /site:footer -->
 </body>
 
 </html>

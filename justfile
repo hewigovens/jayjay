@@ -27,7 +27,7 @@ list:
   @echo "just lint              Lint Rust (clippy), Swift (swiftlint), and web (tsc, oxlint) (publish)"
   @echo "just wasm-grammars     Rebuild jj-diff's bundled WebAssembly grammars from their pinned sources"
   @echo "just profile diff|refresh [--alloc] args  Hotpath profile of jj-diff or a repo refresh"
-  @echo "just site [--check]    Generate the translated landing pages from docs/index.html"
+  @echo "just site [--check]    Expand the shared site head/nav/footer and generate the translated landing pages"
   @echo "just clean             Remove generated build artifacts"
   @echo "just build             Build the macOS app"
   @echo "just run               Build and launch the app"

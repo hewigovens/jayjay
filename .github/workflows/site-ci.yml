@@ -4,21 +4,17 @@ on:
   push:
     branches: [main]
     paths:
-      - "docs/index.html"
-      - "docs/ja/**"
-      - "docs/zh-hans/**"
-      - "docs/zh-hant/**"
+      - "docs/**/*.html"
       - "site/**"
       - "scripts/site.mjs"
+      - "scripts/site-chrome.mjs"
       - ".github/workflows/site-ci.yml"
   pull_request:
     paths:
-      - "docs/index.html"
-      - "docs/ja/**"
-      - "docs/zh-hans/**"
-      - "docs/zh-hant/**"
+      - "docs/**/*.html"
       - "site/**"
       - "scripts/site.mjs"
+      - "scripts/site-chrome.mjs"
       - ".github/workflows/site-ci.yml"
 
 permissions:
@@ -30,5 +26,5 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Check translated landing pages
+      - name: Check generated site pages
         run: node scripts/site.mjs --check
