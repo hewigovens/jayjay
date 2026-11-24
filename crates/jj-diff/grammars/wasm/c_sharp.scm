@@ -193,7 +193,17 @@
   "init"
   "with"
   "let"
+  "unsafe"
 ] @keyword
+
+;; File-based app directives (#!, #:package Name@Version, #:property Name=Value, ...)
+
+(shebang_directive) @keyword
+(ignored_directive "#:" @keyword)
+(directive_kind) @keyword
+(directive_name) @variable
+(directive_separator) @punctuation.delimiter
+(directive_value) @string
 
 ;; Attribute
 
