@@ -23,20 +23,27 @@ pub(crate) fn partition_file_selection(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
 ) -> JayResult<PartitionedSelection> {
-    partition_file_selection_impl(selection, ignore_whitespace, false)
+    partition_file_selection_impl(selection, ignore_whitespace, Output::Trees)
 }
 
 pub(crate) fn partition_validated_text_selection(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
 ) -> JayResult<PartitionedSelection> {
-    partition_file_selection_impl(selection, ignore_whitespace, true)
+    partition_file_selection_impl(selection, ignore_whitespace, Output::ExternalTool)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Output {
+    Trees,
+    /// The caller validated the text, and the selected side is the whole edited file the tool hands back, so it keeps changes Ignore Whitespace hides.
+    ExternalTool,
 }
 
 fn partition_file_selection_impl(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
-    text_validated: bool,
+    output: Output,
 ) -> JayResult<PartitionedSelection> {
     if selection.hunk_type.has_source() || selection.old_path.is_some() {
         return Err(JayError::Internal {
@@ -49,7 +56,7 @@ fn partition_file_selection_impl(
 
     let old_text = selection.old_content.as_deref().unwrap_or_default();
     let new_text = selection.new_content.as_deref().unwrap_or_default();
-    if !text_validated
+    if output == Output::Trees
         && (!crate::placeholder::is_editable_text(old_text)
             || !crate::placeholder::is_editable_text(new_text))
     {
@@ -72,10 +79,16 @@ fn partition_file_selection_impl(
         let is_selected = selected_indices.contains(&(index + 1));
         match line.style {
             crate::diff::DiffSpanStyle::Context | crate::diff::DiffSpanStyle::Unchanged => {
+                // Ignore Whitespace can pair differing lines, so the selected tree keeps the parent's text to leave hidden changes unselected.
+                let selected_line = match output {
+                    Output::Trees => line.old_line_no.map(|no| clone_line(&old_lines, no)),
+                    Output::ExternalTool => line.new_line_no.map(|no| clone_line(&new_lines, no)),
+                };
+                if let Some(selected_line) = selected_line {
+                    selected_result.push(selected_line?);
+                }
                 if let Some(new_line_no) = line.new_line_no {
-                    let cloned = clone_line(&new_lines, new_line_no)?;
-                    selected_result.push(cloned.clone());
-                    remaining_result.push(cloned);
+                    remaining_result.push(clone_line(&new_lines, new_line_no)?);
                 }
             }
             crate::diff::DiffSpanStyle::Removed => {
@@ -185,25 +198,35 @@ mod tests {
         old_content: Option<&str>,
         new_content: Option<&str>,
         ranges: &[(u32, u32)],
+        ignore_whitespace: bool,
     ) -> PartitionedSelection {
         partition_file_selection(
-            &DiffEditFileSelection {
-                path: "test.txt".to_owned(),
-                old_path: None,
-                old_content: old_content.map(str::to_owned),
-                new_content: new_content.map(str::to_owned),
-                hunk_type,
-                line_ranges: ranges
-                    .iter()
-                    .map(|(start, end)| DiffEditRange {
-                        start_line: *start,
-                        end_line: *end,
-                    })
-                    .collect(),
-            },
-            false,
+            &selection(hunk_type, old_content, new_content, ranges),
+            ignore_whitespace,
         )
         .expect("partition selection")
+    }
+
+    fn selection(
+        hunk_type: HunkType,
+        old_content: Option<&str>,
+        new_content: Option<&str>,
+        ranges: &[(u32, u32)],
+    ) -> DiffEditFileSelection {
+        DiffEditFileSelection {
+            path: "test.txt".to_owned(),
+            old_path: None,
+            old_content: old_content.map(str::to_owned),
+            new_content: new_content.map(str::to_owned),
+            hunk_type,
+            line_ranges: ranges
+                .iter()
+                .map(|(start, end)| DiffEditRange {
+                    start_line: *start,
+                    end_line: *end,
+                })
+                .collect(),
+        }
     }
 
     #[test]
@@ -213,6 +236,7 @@ mod tests {
             Some("a\nb\n"),
             Some("a\nx\n"),
             &[(3, 3)],
+            false,
         );
         assert_eq!(selection.selected_text, "a\nb\nx\n");
         assert!(selection.selected_exists);
@@ -226,6 +250,7 @@ mod tests {
             Some("a\nb\n"),
             Some("a\nx\n"),
             &[(2, 3)],
+            false,
         );
         assert_eq!(selection.selected_text, "a\nx\n");
         assert!(selection.selected_exists);
@@ -234,7 +259,7 @@ mod tests {
 
     #[test]
     fn selecting_removed_line_on_deleted_file_produces_absent_selected_tree() {
-        let selection = partition(HunkType::Removed, Some("a\n"), None, &[(1, 1)]);
+        let selection = partition(HunkType::Removed, Some("a\n"), None, &[(1, 1)], false);
         assert_eq!(selection.selected_text, "");
         assert!(!selection.selected_exists);
         assert_eq!(selection.remaining_text, "a\n");
@@ -244,7 +269,7 @@ mod tests {
     #[test]
     fn added_and_removed_files_exist_on_the_side_that_keeps_any_of_their_lines() {
         let exists = |hunk_type, old, new, ranges: &[(u32, u32)]| {
-            let selection = partition(hunk_type, old, new, ranges);
+            let selection = partition(hunk_type, old, new, ranges, false);
             (selection.selected_exists, selection.remaining_exists)
         };
         let two_lines = Some("a\nb\n");
@@ -265,10 +290,26 @@ mod tests {
 
     #[test]
     fn selecting_part_of_added_file_keeps_partial_file() {
-        let selection = partition(HunkType::Added, None, Some("a\nb\n"), &[(1, 1)]);
+        let selection = partition(HunkType::Added, None, Some("a\nb\n"), &[(1, 1)], false);
         assert_eq!(selection.selected_text, "a\n");
         assert!(selection.selected_exists);
         assert_eq!(selection.remaining_text, "b\n");
         assert!(selection.remaining_exists);
+    }
+
+    #[test]
+    fn hidden_whitespace_change_stays_out_of_the_selected_tree_but_in_external_tool_output() {
+        let (old, new) = (Some("{\nbody\n}"), Some("{\n    body\n    added\n}"));
+        let trees = partition(HunkType::Modified, old, new, &[(3, 3)], true);
+        assert_eq!(trees.selected_text, "{\nbody\n    added\n}");
+        assert_eq!(trees.remaining_text, "{\n    body\n}");
+        assert_eq!(trees.selected_changed_lines, 1);
+
+        let external = partition_validated_text_selection(
+            &selection(HunkType::Modified, old, new, &[(3, 3)]),
+            true,
+        )
+        .expect("partition selection");
+        assert_eq!(external.selected_text, "{\n    body\n    added\n}");
     }
 }
