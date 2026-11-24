@@ -11,7 +11,6 @@ extension ChangeDetailView {
             showFileFilter = false
             fileFilter = ""
             fileEditor = nil
-            collapsedFiles = []
         }
         if !preservingFileContext || conflictEditor?.revision != detailRevision {
             conflictEditor = nil

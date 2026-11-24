@@ -222,6 +222,7 @@ struct ChangeDetailView: View {
         }
         .onChange(of: detailRevision) { _, _ in
             descriptionExpansion = .preference
+            collapsedFiles = []
         }
         .onChange(of: appSettings.autoExpandDescription) { _, _ in
             descriptionExpansion = .preference
