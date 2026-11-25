@@ -5007,7 +5007,6 @@ dependencies = [
 name = "jj-diff"
 version = "0.1.1"
 dependencies = [
- "cc",
  "flate2",
  "hex",
  "hotpath",
@@ -5025,6 +5024,7 @@ dependencies = [
  "tree-sitter-css",
  "tree-sitter-dart",
  "tree-sitter-fish",
+ "tree-sitter-fluent",
  "tree-sitter-go",
  "tree-sitter-highlight",
  "tree-sitter-html",
@@ -5033,7 +5033,6 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-json",
  "tree-sitter-kotlin-sg",
- "tree-sitter-language",
  "tree-sitter-lua",
  "tree-sitter-make",
  "tree-sitter-md",
@@ -8809,6 +8808,16 @@ checksum = "014e3b299f251e9c2e372e3b5e1b0323ef21196e9aa2e90a5bc1f6130cbe8b18"
 dependencies = [
  "cc",
  "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-fluent"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd927a3f3d838158d544f262af1c615fcadb0ea8689c8182a5ee931578ddf630"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
 ]
 
 [[package]]

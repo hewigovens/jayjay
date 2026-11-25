@@ -10,7 +10,7 @@ source "$root/scripts/grammar-wasm.sh"
 # The build steps are part of every cache key, so editing them rebuilds each grammar.
 steps="$(cat "$root/scripts/grammar-wasm.sh" "${BASH_SOURCE[0]}" | shasum -a 256 | cut -c1-16)"
 
-# grammar file, crate in Cargo.lock or in-repository path, grammar directory
+# grammar file, crate in Cargo.lock, grammar directory
 sources=(
   "bash tree-sitter-bash ."
   "batch tree-sitter-batch ."
@@ -19,7 +19,7 @@ sources=(
   "cpp tree-sitter-cpp ."
   "css tree-sitter-css ."
   "fish tree-sitter-fish ."
-  "fluent ./crates/jj-diff/grammars/fluent ."
+  "fluent tree-sitter-fluent ."
   "go tree-sitter-go ."
   "html tree-sitter-html ."
   "ini tree-sitter-ini ."
@@ -69,10 +69,7 @@ for file in $files; do
     exit 1
   fi
   read -r _ crate dir <<< "$entry"
-  case "$crate" in
-    ./*) license="$root/$crate/LICENSE" ;;
-    *) license="$(ls -d "$registry"/*/"$crate-$(locked_version "$crate")" | head -n 1)/LICENSE" ;;
-  esac
+  license="$(ls -d "$registry"/*/"$crate-$(locked_version "$crate")" | head -n 1)/LICENSE"
   # Several crates publish no license file, so their upstream one is kept in the repository.
   [[ -f "$license" ]] || license="$root/crates/jj-diff/grammars/licenses/$crate.LICENSE"
   notice "$file" "$license" >> "$notices"

@@ -11,23 +11,21 @@ locked_version() {
   echo "$versions"
 }
 
-# The version a source resolves to: a crate's locked version, a git source's commit, or a hash of an in-repository grammar.
+# The version a source resolves to: a crate's locked version or a git source's commit.
 source_version() {
   case "$1" in
     https://*) echo "${1#*@}" ;;
-    ./*) find "$root/$1" -type f -print0 | sort -z | xargs -0 cat | shasum -a 256 | cut -c1-16 ;;
     *) locked_version "$1" ;;
   esac
 }
 
-# Copies a crate locked in Cargo.lock, a git repository@commit, or an in-repository path to a writable directory.
+# Copies a crate locked in Cargo.lock or a git repository@commit to a writable directory.
 fetch_source() {
   case "$1" in
     https://*)
       git clone --quiet "${1%@*}" "$2"
       git -C "$2" checkout --quiet "${1#*@}"
       ;;
-    ./*) cp -R "$root/$1" "$2" ;;
     *) cp -R "$(ls -d "$registry"/*/"$1-$(locked_version "$1")" | head -n 1)" "$2" ;;
   esac
   chmod -R u+w "$2"
