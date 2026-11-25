@@ -18,6 +18,8 @@ Use the agent's native review workflow and output format. [Task Authority](../AG
 - Review the requested behavior and changed trust boundaries. If the patch adds an unrelated feature or subsystem, recommend removing or deferring it before demanding completeness.
 - On later rounds, re-check the full patch for unresolved material defects, including newly discovered defects in the original patch and regressions from fixes. Keep the original feature contract.
 - Prefer the smallest fix that restores the intended invariant at every site sharing the same assumption; a fix that covers only the reported case invites the sibling case next round. Stop when the requested behavior is correct, focused tests pass, and no material defect remains.
+- An independent review gets at most two rounds: the review, then one pass confirming its fixes. After the confirming pass, fix only Critical or High findings and list the rest in the report instead of starting another round.
+- Rare edge cases are not blocking findings: a defect that needs hostile or corrupted input the change's own code produces, a rerun or ordering race, or a state normal use never reaches. Reviewers report them in one line under the non-blocking lists; authors skip them unless the user asks. Real integrity, security, and credential holes stay blocking.
 
 ## Correctness Review
 
@@ -71,7 +73,7 @@ Use the agent's native severity labels when available. Otherwise use:
 
 - **Critical**: data loss, destructive repo mutation, command execution or credential exposure, release/update integrity failure, or a security issue that can compromise users.
 - **High**: broken build, likely user-facing workflow regression, incorrect jj operation, corrupted review state, invalid generated binding, broken release or PR flow.
-- **Medium**: edge-case correctness bug, stale state, or incorrect error handling.
+- **Medium**: correctness bug in a reachable edge case, stale state, or incorrect error handling.
 - **Low**: minor correctness bug with limited impact.
 
-When asked to fix issues, make the smallest scoped patch that also covers the sibling sites of each finding, rerun the affected checks, and re-review the resulting diff before handing it back. When the findings came from an independent reviewer, that reviewer verifies the fixes: resume the same session or agent with the fixed files, and ask for a status per finding plus any defect the fixes introduced.
+When asked to fix issues, make the smallest scoped patch that also covers the sibling sites of each finding, rerun the affected checks, and re-review the resulting diff before handing it back. When the findings came from an independent reviewer, that reviewer verifies the fixes: resume the same session or agent with the fixed files, and ask for a status per finding plus any defect the fixes introduced. That confirmation is the last round; see [Scope And Convergence](#scope-and-convergence).
