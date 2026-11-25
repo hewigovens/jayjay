@@ -31,7 +31,6 @@ if [[ "$configuration" == Release ]]; then
     "DashboardIcons $project/Resources/DashboardIcons.LICENSE"
     "Ondine $mermaid/ondine-LICENSE.txt"
     "Pele $mermaid/pele-LICENSE.txt"
-    "tree-sitter-fluent $root/crates/jj-diff/grammars/fluent/LICENSE"
   )
   for license in "$root"/crates/jj-diff/grammars/wasm/*.LICENSE; do
     bundled+=("tree-sitter-$(basename "$license" .LICENSE) $license")

@@ -2,8 +2,6 @@
 mod bundled;
 #[cfg(all(feature = "syntax", not(target_family = "wasm")))]
 mod cache;
-#[cfg(all(feature = "lang-fluent", not(target_family = "wasm")))]
-mod fluent;
 #[cfg(feature = "lang-markdown")]
 mod markdown;
 #[cfg(target_family = "wasm")]
@@ -288,7 +286,7 @@ languages! {
     "lang-bash": "shell" | "bash" from "bash" => tree_sitter_bash::LANGUAGE, tree_sitter_bash::HIGHLIGHT_QUERY;
     "lang-batch": "batch" => tree_sitter_batch::LANGUAGE, tree_sitter_batch::HIGHLIGHTS_QUERY;
     "lang-fish": "fish" => tree_sitter_fish::language(), tree_sitter_fish::HIGHLIGHTS_QUERY;
-    "lang-fluent": "fluent" => fluent::LANGUAGE, fluent::HIGHLIGHTS_QUERY;
+    "lang-fluent": "fluent" => tree_sitter_fluent::LANGUAGE, tree_sitter_fluent::HIGHLIGHTS_QUERY;
     "lang-powershell": "powershell" => tree_sitter_powershell::LANGUAGE, tree_sitter_powershell::HIGHLIGHTS_QUERY;
     "lang-yaml": "yaml" => tree_sitter_yaml::LANGUAGE, tree_sitter_yaml::HIGHLIGHTS_QUERY;
     "lang-swift": "swift" => tree_sitter_swift::LANGUAGE, tree_sitter_swift::HIGHLIGHTS_QUERY;
