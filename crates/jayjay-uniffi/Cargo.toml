@@ -14,9 +14,8 @@ desktop = [
     "jayjay-core/repository",
     "jayjay-core/watchman",
     "jayjay-review/storage",
-    "bindgen",
 ]
-# Lets a portable build generate bindings without compiling `desktop`.
+# Only the `uniffi-bindgen` binary enables it, so the app library never links the generator.
 bindgen = ["uniffi/cli"]
 wasm = ["uniffi/wasm-unstable-single-threaded"]
 

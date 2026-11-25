@@ -10,7 +10,7 @@ headers_dir="$bindings_dir/Headers"
 
 wrap() {
   local profile="$1" staticlib="$2"
-  local args=(-p jayjay-uniffi --bin uniffi-bindgen)
+  local args=(-p jayjay-uniffi --features bindgen --bin uniffi-bindgen)
   mkdir -p "${bindings_dir}" "${headers_dir}" "${swift_out}"
   [[ "$profile" != release ]] || args=(--release "${args[@]}")
   cargo build "${args[@]}"
