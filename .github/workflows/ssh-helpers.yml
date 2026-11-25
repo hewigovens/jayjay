@@ -2,16 +2,19 @@ name: SSH helpers
 
 on:
   workflow_dispatch:
+  # Releases take helpers from main runs, so PRs build only when the helper build changes.
   pull_request:
-    paths: &paths
+    paths:
+      - "scripts/ssh-helper.sh"
+      - ".github/workflows/ssh-helpers.yml"
+  push:
+    branches: [main]
+    paths:
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
       - "scripts/ssh-helper.sh"
       - ".github/workflows/ssh-helpers.yml"
-  push:
-    branches: [main]
-    paths: *paths
 
 permissions:
   contents: read
