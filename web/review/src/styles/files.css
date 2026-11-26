@@ -2,6 +2,20 @@
   justify-content: flex-start;
   gap: 4px;
   padding-inline: 10px 14px;
+  border-bottom: 0;
+}
+:where(.jayjay-review) .jj-file-progress {
+  flex: none;
+  height: 2px;
+  box-shadow: inset 0 -1px var(--jj-border);
+}
+:where(.jayjay-review) .jj-file-progress:has(> div) {
+  background: var(--jj-border);
+  box-shadow: none;
+}
+:where(.jayjay-review) .jj-file-progress > div {
+  height: 100%;
+  background: var(--jj-reviewed-ink);
 }
 :where(.jayjay-review) .jj-file-count {
   margin-left: auto;

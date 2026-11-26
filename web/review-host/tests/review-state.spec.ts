@@ -144,3 +144,13 @@ test("a folder's context menu marks the files under it and follows their state",
   await ready(page);
   await expect(mark("src/greeting.rs")).not.toBeChecked();
 });
+
+test("marking a file fills the review progress under the file tools", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  const fill = page.locator(".jj-file-progress > div");
+  await expect(fill).toHaveCSS("width", "0px");
+  await page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true }).click();
+  await ready(page);
+  await expect(fill).not.toHaveCSS("width", "0px");
+});

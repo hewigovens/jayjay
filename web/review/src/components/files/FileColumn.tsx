@@ -267,7 +267,8 @@ export function FileColumn({
     [overview.files, visible],
   );
   const activeNotes = overview.notes.filter((note) => !note.note.resolved).length;
-  const reviewed = overview.files.some((file) => file.review === "reviewed");
+  const reviewedCount = overview.files.filter((file) => file.review === "reviewed").length;
+  const reviewed = reviewedCount > 0;
   const { counts } = overview;
   const countLabel = text
     ? counts.filtered[visible.size]
@@ -346,6 +347,12 @@ export function FileColumn({
           <ToolButton label={labels.shortcuts} aria-keyshortcuts="?" onClick={onShowShortcuts}>
             <KeyboardIcon />
           </ToolButton>
+        )}
+      </div>
+      {/* Always 2px tall, so the list does not shift when review mode turns the divider into progress. */}
+      <div className="jj-file-progress" aria-hidden="true">
+        {marks && overview.files.length > 0 && (
+          <div style={{ width: `${(reviewedCount / overview.files.length) * 100}%` }} />
         )}
       </div>
       {searching && (
