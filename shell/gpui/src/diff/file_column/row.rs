@@ -7,7 +7,7 @@ use jayjay_core::theme::mix;
 use jayjay_review::ReviewFileRollup;
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::diff::file_status;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{CheckSquareState, HelpTag, check_square};
@@ -128,11 +128,11 @@ pub(super) fn file_text_content(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .line_height(px(t.scaled_font_size(16.)))
                 .child(
                     div()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .font_weight(gpui::FontWeight::MEDIUM)
                         .text_color(rgb(t.fg))
                         .opacity(name_opacity)
@@ -183,7 +183,7 @@ pub(super) fn row_separator(inset: f32, t: &Theme) -> AnyElement {
     div()
         .absolute()
         .bottom_0()
-        .left(px(inset))
+        .left(px(t.scaled_font_size(inset)))
         .right_0()
         .h(px(1.))
         .bg(rgb(t.row_border))
@@ -232,14 +232,14 @@ pub(super) fn agent_badge(path: &str, t: &Theme) -> AnyElement {
     div()
         .id(SharedString::from(selector.clone()))
         .flex_none()
-        .px(px(5.))
-        .py(px(1.))
+        .px(ui_size(5.))
+        .py(ui_size(1.))
         .rounded_full()
         .bg(rgba(with_alpha(
             t.fg_dim,
             if t.is_dark { 0x2a } else { 0x1f },
         )))
-        .text_size(ui_font_size(9.))
+        .text_size(ui_size(9.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
         .debug_selector(move || selector.clone())
@@ -252,14 +252,14 @@ pub(super) fn agent_badge(path: &str, t: &Theme) -> AnyElement {
 fn note_badge(count: usize, t: &Theme) -> AnyElement {
     div()
         .flex_none()
-        .px(px(5.))
-        .py(px(1.))
+        .px(ui_size(5.))
+        .py(ui_size(1.))
         .rounded_full()
         .bg(rgba(with_alpha(
             t.note_accent,
             if t.is_dark { 0x2a } else { 0x1f },
         )))
-        .text_size(ui_font_size(9.))
+        .text_size(ui_size(9.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.note_accent))
         .child(SharedString::from(format!("\u{25cf}{count}")))

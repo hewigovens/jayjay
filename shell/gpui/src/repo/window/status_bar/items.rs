@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, ClickEvent, Context, Div, InteractiveElement, IntoElement, ParentElement,
-    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, rgb,
 };
 use jayjay_core::ssh::ConnectionState;
 use jayjay_core::{
@@ -9,7 +9,7 @@ use jayjay_core::{
 
 use super::RepoWindow;
 use super::model::working_copy_stat_label;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::app::theme::{FONT_META, Theme, ui_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{HelpTag, dot_separator};
 
@@ -168,7 +168,7 @@ pub(super) fn status_group(items: Vec<AnyElement>, t: &Theme) -> AnyElement {
 }
 
 fn separator(t: &Theme) -> AnyElement {
-    dot_separator(t).px(px(4.)).into_any_element()
+    dot_separator(t).px(ui_size(4.)).into_any_element()
 }
 
 fn status_action<F>(
@@ -200,8 +200,8 @@ fn status_item_base(spec: StatusItemSpec, t: &Theme) -> Stateful<Div> {
         .flex_row()
         .items_center()
         .min_w_0()
-        .gap(px(3.))
-        .text_size(ui_font_size(FONT_META))
+        .gap(ui_size(3.))
+        .text_size(ui_size(FONT_META))
         .text_color(rgb(t.fg_dim));
     if spec.shrinks {
         item = item.flex_shrink(1.);

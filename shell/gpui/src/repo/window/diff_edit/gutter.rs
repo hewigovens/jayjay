@@ -39,7 +39,7 @@ pub(super) fn diff_edit_line_row(
     } else {
         div()
             .flex_none()
-            .w(px(CHECKBOX_WIDTH))
+            .w(px(t.scaled_code_font_size(CHECKBOX_WIDTH)))
             .h(px(t.code_line_height()))
             .bg(rgb(bg))
             .into_any_element()
@@ -50,7 +50,7 @@ pub(super) fn diff_edit_line_row(
         .flex()
         .w_full()
         .h(px(t.code_line_height()))
-        .px(px(18.))
+        .px(px(t.scaled_code_font_size(18.)))
         .code_text(12., t)
         .line_height(px(t.code_line_height()))
         .child(
@@ -67,7 +67,7 @@ pub(super) fn diff_edit_line_row(
             div()
                 .flex_1()
                 .min_w_0()
-                .pl(px(4.))
+                .pl(px(t.scaled_code_font_size(4.)))
                 .child(content_row(line, t, None, None, advance)),
         )
         .into_any_element()
@@ -90,7 +90,7 @@ fn checkbox_cell(
         .flex()
         .items_center()
         .justify_center()
-        .w(px(CHECKBOX_WIDTH))
+        .w(px(t.scaled_code_font_size(CHECKBOX_WIDTH)))
         .h(px(t.code_line_height()))
         .bg(rgb(bg))
         .text_color(rgb(t.fg_faint))
@@ -101,8 +101,8 @@ fn checkbox_cell(
         .child(if checked {
             svg()
                 .path(crate::ui::icons::CHECK_SVG)
-                .w(px(10.))
-                .h(px(10.))
+                .w(px(t.scaled_code_font_size(10.)))
+                .h(px(t.scaled_code_font_size(10.)))
                 .text_color(rgb(t.selected_accent))
                 .into_any_element()
         } else {

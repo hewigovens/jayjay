@@ -1,7 +1,7 @@
-use gpui::{InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, rgb};
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 use crate::ui::primitives::copy_icon_button;
 
@@ -10,7 +10,7 @@ pub(super) fn success_badge(t: &Theme) -> impl IntoElement {
         .flex()
         .items_center()
         .justify_center()
-        .size(px(48.))
+        .size(ui_size(48.))
         .rounded_full()
         .bg(rgb(t.file_added_color))
         .child(icons::icon(icons::glyph::CHECK, 26., 0xffffff))
@@ -18,7 +18,7 @@ pub(super) fn success_badge(t: &Theme) -> impl IntoElement {
 
 pub(super) fn mono_line(text: String, size: f32, color: u32, t: &Theme) -> impl IntoElement {
     div()
-        .max_w(px(360.))
+        .max_w(ui_size(360.))
         .code_text(size, t)
         .text_color(rgb(color))
         .child(text)
@@ -32,9 +32,9 @@ pub(super) fn command_row(command: &'static str, t: &Theme) -> impl IntoElement 
         .items_center()
         .justify_between()
         .w_full()
-        .gap(px(10.))
-        .px(px(10.))
-        .py(px(8.))
+        .gap(ui_size(10.))
+        .px(ui_size(10.))
+        .py(ui_size(8.))
         .rounded_sm()
         .bg(rgb(t.row_alt_bg))
         .text_color(rgb(t.fg))
@@ -58,8 +58,8 @@ pub(super) fn tip(glyph_str: &'static str, text: String, t: &Theme) -> impl Into
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(10.))
-        .text_size(ui_font_size(13.))
+        .gap(ui_size(10.))
+        .text_size(ui_size(13.))
         .text_color(rgb(t.fg_dim))
         .child(icons::icon(glyph_str, 16., t.selected_accent))
         .child(text)

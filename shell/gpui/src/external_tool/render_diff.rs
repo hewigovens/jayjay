@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::ui::primitives::button;
 
@@ -59,7 +59,7 @@ impl ExternalToolWindow {
             .flex()
             .flex_col()
             .flex_none()
-            .w(px(270.))
+            .w(ui_size(270.))
             .h_full()
             .overflow_y_scroll()
             .border_r_1()
@@ -83,9 +83,9 @@ impl ExternalToolWindow {
                     .flex()
                     .flex_row()
                     .items_center()
-                    .gap(px(7.))
+                    .gap(ui_size(7.))
                     .h(px(t.scaled_control_height(34., 12.)))
-                    .px(px(10.))
+                    .px(ui_size(10.))
                     .bg(rgb(if active { t.selected_bg } else { t.detail_bg }))
                     .border_b_1()
                     .border_color(rgb(t.row_border))
@@ -99,7 +99,7 @@ impl ExternalToolWindow {
                     }))
                     .child(
                         div()
-                            .w(px(14.))
+                            .w(ui_size(14.))
                             .text_color(rgb(t.selected_accent))
                             .child(indicator),
                     )
@@ -108,7 +108,7 @@ impl ExternalToolWindow {
                             .min_w_0()
                             .flex_1()
                             .truncate()
-                            .text_size(ui_font_size(12.))
+                            .text_size(ui_size(12.))
                             .child(path),
                     ),
             );
@@ -129,9 +129,9 @@ impl ExternalToolWindow {
             .flex()
             .flex_row()
             .items_center()
-            .gap(px(10.))
+            .gap(ui_size(10.))
             .h(px(t.scaled_control_height(38., 12.)))
-            .px(px(10.))
+            .px(ui_size(10.))
             .bg(rgb(t.header_bg))
             .border_b_1()
             .border_color(rgb(t.border))
@@ -140,12 +140,12 @@ impl ExternalToolWindow {
                     .min_w_0()
                     .flex_1()
                     .truncate()
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .child(path.clone()),
             )
             .child(
                 div()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(if executable_changed && changed_count == 0 {
                         jayjay_i18n::merge::executable_permission_changed()
@@ -157,7 +157,7 @@ impl ExternalToolWindow {
             if !supports_editing {
                 header = header.child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(jayjay_i18n::merge::whole_file_selection()),
                 );
@@ -270,7 +270,7 @@ fn external_diff_row(
                 .items_center()
                 .justify_center()
                 .flex_none()
-                .w(px(24.))
+                .w(px(t.scaled_code_font_size(24.)))
                 .h(px(t.code_line_height()))
                 .bg(rgb(bg))
                 .text_color(rgb(t.selected_accent))

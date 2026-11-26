@@ -6,7 +6,7 @@ use gpui::{
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::{self, AppConfigStore};
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::divider_h;
 use crate::windows::settings::{SettingsSection, SettingsView};
@@ -107,12 +107,12 @@ impl Render for KeyboardShortcutsView {
                     .debug_selector(|| "keyboard-shortcuts-scroll".to_owned())
                     .flex()
                     .flex_row()
-                    .gap(px(32.))
+                    .gap(ui_size(32.))
                     .flex_1()
                     .min_h_0()
                     .overflow_y_scroll()
                     .scrollbar_width(px(0.))
-                    .p(px(20.))
+                    .p(ui_size(20.))
                     .child(ShortcutSection::column(left, &bindings, &t, cx))
                     .child(ShortcutSection::column(right, &bindings, &t, cx)),
             )
@@ -140,9 +140,9 @@ impl Render for KeyboardShortcutsView {
             .child(divider_h(&t))
             .child(
                 div()
-                    .px(px(20.))
-                    .py(px(10.))
-                    .text_size(ui_font_size(11.))
+                    .px(ui_size(20.))
+                    .py(ui_size(10.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(t.fg_faint))
                     .child(jayjay_i18n::shortcuts::esc_closes_the_palette_and_sheets()),
             )
@@ -154,14 +154,14 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
         .flex()
         .items_center()
         .justify_between()
-        .px(px(20.))
-        .py(px(14.))
+        .px(ui_size(20.))
+        .py(ui_size(14.))
         .child(
             div()
                 .flex()
                 .items_center()
-                .gap(px(8.))
-                .text_size(ui_font_size(16.))
+                .gap(ui_size(8.))
+                .text_size(ui_size(16.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(icons::icon(glyph::INFO, 15., t.fg_dim))
                 .child(jayjay_i18n::menu::keyboard_shortcuts()),
@@ -173,7 +173,7 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
                 .flex()
                 .items_center()
                 .justify_center()
-                .size(px(26.))
+                .size(ui_size(26.))
                 .rounded_full()
                 .bg(rgb(t.row_alt_bg))
                 .cursor_pointer()

@@ -1,13 +1,12 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, px,
-    rgb,
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, rgb,
 };
 
 use super::super::diff_stack::diff_stack;
 use super::super::{ConflictResolution, DiffRichPreviewKind, RepoWindow};
 use super::description;
 use super::header::{DetailHeaderState, DiffActions, detail_header};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::{
     DiffViewState, FindState, SvgPreviewContent, diff_view, render_find_bar, stale_notes_banner,
 };
@@ -259,7 +258,7 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
         .size_full()
         .items_center()
         .justify_center()
-        .px(px(24.))
+        .px(ui_size(24.))
         .bg(rgb(t.detail_bg))
         .child(
             div()
@@ -268,13 +267,13 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                 .flex_col()
                 .items_center()
                 .w_full()
-                .max_w(px(460.))
-                .gap(px(10.))
+                .max_w(ui_size(460.))
+                .gap(ui_size(10.))
                 .text_align(gpui::TextAlign::Center)
                 .child(icons::icon(glyph::ARROWS_LEFT_RIGHT, 28., t.compare_accent))
                 .child(
                     div()
-                        .text_size(ui_font_size(15.))
+                        .text_size(ui_size(15.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child(jayjay_i18n::repo::changes_selected_count(count)),
@@ -283,9 +282,9 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                     div()
                         .flex()
                         .flex_col()
-                        .gap(px(3.))
-                        .text_size(ui_font_size(11.))
-                        .line_height(ui_font_size(16.))
+                        .gap(ui_size(3.))
+                        .text_size(ui_size(11.))
+                        .line_height(ui_size(16.))
                         .text_color(rgb(t.fg_faint))
                         .child(jayjay_i18n::repo::these_changes_dont_form_a_single())
                         .child(jayjay_i18n::repo::right_click_any_selected_change_for()),

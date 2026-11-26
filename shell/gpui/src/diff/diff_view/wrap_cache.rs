@@ -115,6 +115,7 @@ impl DiffWrapCache {
                 Some(label_width(
                     &label_text(moved, line.style),
                     size,
+                    theme(cx),
                     &text_system,
                 ))
             })

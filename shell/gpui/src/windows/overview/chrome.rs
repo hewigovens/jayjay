@@ -1,13 +1,13 @@
 use gpui::{
     AnyElement, App, ClickEvent, Context, Focusable, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, rgb,
 };
 use gpui::{AppContext, Entity};
 use jayjay_core::overview::OverviewSnapshot;
 
 use super::OverviewView;
 use super::actions::Confirmation;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{confirmation_card, overlay_actions, overlay_layer};
 use crate::ui::primitives::{button, icon_button};
@@ -90,7 +90,7 @@ impl OverviewView {
             div()
                 .id("overview-filter")
                 .debug_selector(|| "overview-filter".to_owned())
-                .w(px(220.))
+                .w(ui_size(220.))
                 .child(self.filter.input.clone())
                 .into_any_element()
         } else {
@@ -112,9 +112,9 @@ impl OverviewView {
             .flex_none()
             .flex_row()
             .items_center()
-            .gap(px(16.))
-            .px(px(14.))
-            .h(px(40.))
+            .gap(ui_size(16.))
+            .px(ui_size(14.))
+            .h(ui_size(40.))
             .bg(rgb(t.header_bg))
             .border_b_1()
             .border_color(rgb(t.border))
@@ -152,7 +152,7 @@ impl OverviewView {
             .children(error.map(|error| {
                 div()
                     .min_w_0()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(t.error_fg))
                     .whitespace_nowrap()
                     .overflow_hidden()
@@ -210,8 +210,8 @@ fn stat(count: usize, label: String, tint: Option<u32>, t: &Theme) -> AnyElement
     div()
         .flex()
         .flex_row()
-        .gap(px(4.))
-        .text_size(ui_font_size(11.))
+        .gap(ui_size(4.))
+        .text_size(ui_size(11.))
         .text_color(rgb(tint.unwrap_or(t.fg_dim)))
         .child(
             div()

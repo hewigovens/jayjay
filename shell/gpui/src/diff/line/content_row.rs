@@ -37,7 +37,7 @@ pub fn content_row(
             .line_height(px(theme.code_line_height()))
             .text_color(rgb(base_text_fg))
             .font_weight(FontWeight::MEDIUM)
-            .px(px(16.))
+            .px(px(theme.scaled_code_font_size(16.)))
             .child(conflict_stripe_overlay(line.conflict_kind, theme))
             .child(SharedString::from(conflict_display_line(
                 label,
@@ -156,6 +156,6 @@ fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
         .text_size(px(theme.compact_code_font_size()))
         .line_height(px(theme.code_line_height()))
         .text_color(rgb(theme.diff_text_dim))
-        .px(px(20.))
+        .px(px(theme.scaled_code_font_size(20.)))
         .child(SharedString::from(label))
 }

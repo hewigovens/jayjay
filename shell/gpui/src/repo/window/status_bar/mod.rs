@@ -1,10 +1,10 @@
 mod items;
 mod model;
 
-use gpui::{Context, IntoElement, ParentElement, Styled, div, px, rgb};
+use gpui::{Context, IntoElement, ParentElement, Styled, div, rgb};
 
 use super::RepoWindow;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::app::theme::{FONT_META, Theme, ui_size};
 
 pub(super) fn status_bar(
     view: &RepoWindow,
@@ -24,12 +24,12 @@ pub(super) fn status_bar(
         .flex_row()
         .items_center()
         .w_full()
-        .px(px(12.))
-        .py(px(5.))
+        .px(ui_size(12.))
+        .py(ui_size(5.))
         .bg(rgb(t.header_bg))
         .border_t_1()
         .border_color(rgb(t.border))
-        .text_size(ui_font_size(FONT_META))
+        .text_size(ui_size(FONT_META))
         .text_color(rgb(t.fg_dim))
         .child(items::status_group(
             items::leading_items(

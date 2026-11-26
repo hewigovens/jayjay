@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::rows::DiffEditCardFile;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::diff::{
     collapse_chevron, file_icon, file_path_label, hunk_status_pill, line_stats, path_copy_button,
     source_path_label,
@@ -38,9 +38,9 @@ pub(super) fn header_row(
         .flex()
         .flex_1()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .h(px(t.code_line_height()))
-        .px(px(14.))
+        .px(ui_size(14.))
         .bg(rgba(header_fill));
     let chevron_path = card.path.to_string();
     row = row.child(
@@ -110,10 +110,10 @@ pub(super) fn header_row(
     if card.supported && selected_count > 0 && selected_count < card.changed_total {
         row = row.child(
             div()
-                .px(px(6.))
+                .px(ui_size(6.))
                 .rounded_full()
                 .bg(rgba(with_alpha(t.selected_accent, 0x24)))
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(jayjay_i18n::repo::lines_selected(
                     selected_count,
@@ -123,7 +123,7 @@ pub(super) fn header_row(
     }
     let row = row.child(div().flex_1()).child(
         div()
-            .text_size(ui_font_size(11.))
+            .text_size(ui_size(11.))
             .text_color(rgb(t.fg_dim))
             .child(if card.supported {
                 jayjay_i18n::repo::select_files_or_lines_to_edit()
@@ -135,7 +135,7 @@ pub(super) fn header_row(
         .flex()
         .w_full()
         .h(px(t.code_line_height()))
-        .px(px(18.))
+        .px(px(t.scaled_code_font_size(18.)))
         .child(row)
         .into_any_element()
 }

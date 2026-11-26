@@ -7,7 +7,7 @@ use jayjay_core::{BisectPhase, BisectState, BisectVerdict};
 
 use super::{RepoModal, RepoWindow};
 use crate::app::fonts::CodeText;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::app::theme::{FONT_META, Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::notice_bar::{notice_bar, notice_bar_header};
 use crate::ui::overlay::{overlay_card, overlay_header, overlay_layer};
@@ -129,7 +129,7 @@ pub(super) fn bisect_bar(
         bar = bar.child(
             div()
                 .debug_selector(|| "bisect-command-error".to_owned())
-                .text_size(ui_font_size(FONT_META))
+                .text_size(ui_size(FONT_META))
                 .text_color(rgb(t.tag_conflict_fg))
                 .child(error),
         );
@@ -142,7 +142,7 @@ pub(super) fn bisect_bar(
         for note in result.restore_note.clone().into_iter().chain(kept) {
             bar = bar.child(
                 div()
-                    .text_size(ui_font_size(FONT_META))
+                    .text_size(ui_size(FONT_META))
                     .text_color(rgb(t.fg_dim))
                     .child(note),
             );
@@ -191,7 +191,7 @@ fn bisect_actions(
         .flex_row()
         .flex_none()
         .items_center()
-        .gap(px(6.));
+        .gap(ui_size(6.));
     let row = match state.phase {
         BisectPhase::Evaluating => row
             .child(mark_button(
@@ -290,18 +290,18 @@ fn test_runner(
         .id("bisect-test-runner")
         .debug_selector(|| "bisect-test-runner".to_owned())
         .occlude()
-        .mb(px(4.))
-        .w(px(340.))
+        .mb(ui_size(4.))
+        .w(ui_size(340.))
         .flex()
         .flex_col()
-        .gap(px(8.))
-        .p(px(12.))
+        .gap(ui_size(8.))
+        .p(ui_size(12.))
         .rounded_md()
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.detail_bg))
         .shadow_md()
-        .text_size(ui_font_size(FONT_META))
+        .text_size(ui_size(FONT_META))
         .on_mouse_down_out(cx.listener(|view, _, _, cx| {
             view.bisect_test_runner_open = false;
             cx.notify();
@@ -316,7 +316,7 @@ fn test_runner(
             div()
                 .flex()
                 .flex_row()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .child(action_button(
                     "bisect-run-step",
                     jayjay_i18n::repo::run_for_this_step(),
@@ -351,7 +351,7 @@ fn test_runner(
 }
 
 fn stop_button(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
-    let size = t.scaled_control_height(22., 11.);
+    let size = 22.;
     let button = if enabled {
         icon_button("bisect-stop", glyph::X_CIRCLE, 14., size, size, t.fg_dim, t).on_click(
             cx.listener(|view, _, _, cx| {
@@ -429,7 +429,7 @@ pub(super) fn bisect_sheet_overlay(
                 .child(range)
                 .child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(jayjay_i18n::repo::bisect_range_hint()),
                 )
@@ -438,7 +438,7 @@ pub(super) fn bisect_sheet_overlay(
                         .flex()
                         .flex_row()
                         .justify_end()
-                        .gap(px(8.))
+                        .gap(ui_size(8.))
                         .child(
                             button(
                                 "bisect-sheet-cancel",
@@ -463,7 +463,7 @@ pub(super) fn bisect_sheet_overlay(
 
 fn field_label(text: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(text.into())
         .into_any_element()

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use jayjay_markdown::{MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem};
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 
 use super::images::{MarkdownImages, ResolvedImage};
 use super::table::table_block;
@@ -43,16 +43,19 @@ pub(super) fn markdown_document(
         .w_full()
         .text_color(rgb(t.fg));
     if style.is_table_projection() {
-        col = col.px(px(22.)).py(px(18.));
+        col = col.px(ui_size(22.)).py(ui_size(18.));
     } else {
-        col = col.gap(px(10.)).px(px(DOCUMENT_PADDING_X)).py(px(16.));
+        col = col
+            .gap(ui_size(10.))
+            .px(px(t.scaled_font_size(DOCUMENT_PADDING_X)))
+            .py(ui_size(16.));
     }
 
     images.sync(document);
     if document.blocks().is_empty() {
         col = col.child(
             div()
-                .text_size(ui_font_size(13.))
+                .text_size(ui_size(13.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::diff::empty_markdown()),
         );
@@ -86,7 +89,7 @@ fn block_element(
         MarkdownBlock::Mermaid(diagram) => {
             let natural_width = diagram.width as f32 * t.scaled_code_font_size(16.) / 16.;
             let width = available_width
-                .map(|width| f32::from(width) - 2. * DOCUMENT_PADDING_X)
+                .map(|width| f32::from(width) - 2. * t.scaled_font_size(DOCUMENT_PADDING_X))
                 .unwrap_or(natural_width)
                 .max(1.)
                 .min(natural_width);
@@ -148,7 +151,7 @@ fn image_block(
         move || image_placeholder(&label, &alt, &t).into_any_element()
     };
     let max_width = available_width
-        .map(|width| width - px(2. * DOCUMENT_PADDING_X))
+        .map(|width| width - px(2. * t.scaled_font_size(DOCUMENT_PADDING_X)))
         .filter(|width| *width > px(0.));
     let mut element = img(image.source)
         .debug_selector(|| format!("markdown-image:{source}"))
@@ -183,18 +186,18 @@ fn image_placeholder(source: &str, alt: &str, t: &Theme) -> gpui::Div {
     div()
         .flex()
         .flex_col()
-        .gap(px(4.))
-        .max_w(px(420.))
+        .gap(ui_size(4.))
+        .max_w(ui_size(420.))
         .rounded_sm()
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.header_bg))
-        .px(px(10.))
-        .py(px(8.))
+        .px(ui_size(10.))
+        .py(ui_size(8.))
         .child(
             div()
-                .text_size(ui_font_size(12.))
-                .line_height(ui_font_size(18.))
+                .text_size(ui_size(12.))
+                .line_height(ui_size(18.))
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(label.to_owned())),
@@ -216,21 +219,21 @@ fn heading_block(level: u8, text: &str, t: &Theme) -> AnyElement {
         _ => (13., FontWeight::SEMIBOLD),
     };
     let mut el = div()
-        .text_size(ui_font_size(size))
-        .line_height(ui_font_size(size + 5.))
+        .text_size(ui_size(size))
+        .line_height(ui_size(size + 5.))
         .font_weight(weight)
         .text_color(rgb(t.fg))
         .child(SharedString::from(text.to_owned()));
     if level <= 2 {
-        el = el.pb(px(4.)).border_b_1().border_color(rgb(t.border));
+        el = el.pb(ui_size(4.)).border_b_1().border_color(rgb(t.border));
     }
     el.into_any_element()
 }
 
 fn paragraph_block(text: &str, t: &Theme) -> AnyElement {
     div()
-        .text_size(ui_font_size(13.))
-        .line_height(ui_font_size(20.))
+        .text_size(ui_size(13.))
+        .line_height(ui_size(20.))
         .text_color(rgb(t.fg))
         .child(SharedString::from(text.to_owned()))
         .into_any_element()
@@ -241,24 +244,24 @@ fn quote_block(text: &str, t: &Theme) -> AnyElement {
         .flex()
         .flex_row()
         .items_start()
-        .gap(px(10.))
-        .px(px(10.))
-        .py(px(8.))
+        .gap(ui_size(10.))
+        .px(ui_size(10.))
+        .py(ui_size(8.))
         .rounded_sm()
         .bg(rgb(t.header_bg))
         .child(
             div()
                 .w(px(3.))
                 .h_full()
-                .min_h(px(20.))
+                .min_h(ui_size(20.))
                 .rounded_sm()
                 .bg(rgb(t.border)),
         )
         .child(
             div()
                 .flex_1()
-                .text_size(ui_font_size(13.))
-                .line_height(ui_font_size(20.))
+                .text_size(ui_size(13.))
+                .line_height(ui_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(text.to_owned())),
         )
@@ -277,8 +280,8 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
     if let Some(language) = language {
         frame = frame.child(
             div()
-                .px(px(10.))
-                .py(px(5.))
+                .px(ui_size(10.))
+                .py(ui_size(5.))
                 .border_b_1()
                 .border_color(rgb(t.border))
                 .code_text(10., t)
@@ -290,8 +293,8 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
     frame
         .child(
             div()
-                .px(px(10.))
-                .py(px(8.))
+                .px(ui_size(10.))
+                .py(ui_size(8.))
                 .code_text(12., t)
                 .line_height(px(t.scaled_code_font_size(18.)))
                 .text_color(rgb(t.fg))
@@ -301,7 +304,7 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
 }
 
 fn list_block(start: Option<u64>, items: &[MarkdownListItem], t: &Theme) -> AnyElement {
-    let mut list = div().flex().flex_col().gap(px(4.));
+    let mut list = div().flex().flex_col().gap(ui_size(4.));
     for (index, item) in items.iter().enumerate() {
         list = list.child(list_item(start, index, item, t));
     }
@@ -320,12 +323,12 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
         .flex()
         .flex_row()
         .items_start()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             div()
-                .w(px(28.))
+                .w(ui_size(28.))
                 .code_text(12., t)
-                .line_height(ui_font_size(20.))
+                .line_height(ui_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(marker)),
         )
@@ -333,8 +336,8 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(ui_font_size(13.))
-                .line_height(ui_font_size(20.))
+                .text_size(ui_size(13.))
+                .line_height(ui_size(20.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(item.text.clone())),
         )

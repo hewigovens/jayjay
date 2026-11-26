@@ -6,7 +6,7 @@ use gpui::{
 use super::TextArea;
 use super::element::TextAreaElement;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{FONT_BODY, theme, ui_font_size, with_alpha};
+use crate::app::theme::{FONT_BODY, theme, ui_size, with_alpha};
 
 impl Render for TextArea {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -79,7 +79,7 @@ impl Render for TextArea {
             };
             root = root.code_font().text_size(px(font_size));
         } else {
-            root = root.text_size(ui_font_size(FONT_BODY));
+            root = root.text_size(ui_size(FONT_BODY));
         }
         let content_height = if self.is_full_bleed_pane() {
             root = root.h_full().bg(rgba(fill)).p(px(10.));

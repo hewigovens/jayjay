@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, AppContext, Context, InteractiveElement, IntoElement, ParentElement, Styled,
-    Window, div, px, rgb,
+    Window, div, rgb,
 };
 use jayjay_core::DiffHunk;
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 
 use super::FileHistoryView;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::{hunk_is_image, image_diff_view, read_only_diff};
 use crate::ui::loading::loading_status;
 use crate::ui::primitives::{placeholder, placeholder_err};
@@ -136,19 +136,19 @@ fn same_revision_note(theme: &Theme) -> AnyElement {
         .flex_col()
         .items_center()
         .justify_center()
-        .gap(px(4.))
-        .px(px(24.))
+        .gap(ui_size(4.))
+        .px(ui_size(24.))
         .debug_selector(|| "file-history-same-revision".to_owned())
         .child(
             div()
-                .text_size(ui_font_size(13.))
+                .text_size(ui_size(13.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(theme.fg))
                 .child(jayjay_i18n::repo::same_revision_as_the_base()),
         )
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(theme.fg_dim))
                 .child(jayjay_i18n::repo::choose_a_different_revision_to_compare()),
         )

@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, Styled, div, px, rgb, uniform_list,
+    ParentElement, SharedString, Styled, div, rgb, uniform_list,
 };
 use jayjay_core::{BookmarkInfo, RemoteBookmarkTarget, RemoteSyncStatus};
 
 use super::BookmarkManagerView;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{FONT_ID, Theme, ui_font_size};
+use crate::app::theme::{FONT_ID, Theme, ui_size};
 use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
@@ -58,9 +58,9 @@ fn bookmark_row(
         .flex_row()
         .w_full()
         .items_center()
-        .gap(px(10.))
-        .px(px(16.))
-        .py(px(8.))
+        .gap(ui_size(10.))
+        .px(ui_size(16.))
+        .py(ui_size(8.))
         .border_b_1()
         .border_color(rgb(t.row_border))
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -75,7 +75,7 @@ fn bookmark_row(
             div()
                 .flex()
                 .flex_col()
-                .gap(px(3.))
+                .gap(ui_size(3.))
                 .min_w_0()
                 .flex_1()
                 .child(
@@ -83,7 +83,7 @@ fn bookmark_row(
                         .flex()
                         .flex_row()
                         .items_center()
-                        .gap(px(6.))
+                        .gap(ui_size(6.))
                         .child(
                             div()
                                 .code_text(13., &t)
@@ -113,19 +113,24 @@ fn status_icon(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
         .flex()
         .items_center()
         .justify_center()
-        .w(px(16.))
+        .w(ui_size(16.))
         .child(icons::icon(glyph::BOOKMARK, 13., color))
         .into_any_element()
 }
 
 fn bookmark_meta(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
-    let mut meta = div().flex().flex_row().items_center().gap(px(6.)).min_w_0();
+    let mut meta = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(ui_size(6.))
+        .min_w_0();
     if !bookmark.description.trim().is_empty() {
         meta = meta.child(
             div()
                 .min_w_0()
                 .text_ellipsis()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(bookmark.description.clone())),
         );

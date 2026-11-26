@@ -1,4 +1,4 @@
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::button;
 use gpui::{
     App, AppContext, Bounds, Context, IntoElement, ParentElement, Render,
@@ -79,12 +79,12 @@ impl Render for SSHConnectionView {
         div()
             .flex()
             .flex_col()
-            .gap(px(12.))
+            .gap(ui_size(12.))
             .size_full()
-            .p(px(20.))
+            .p(ui_size(20.))
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .text_size(ui_font_size(12.))
+            .text_size(ui_size(12.))
             .child(self.location.machine.clone())
             .child(self.location.path.clone())
             .child(if self.busy {
@@ -103,7 +103,7 @@ impl Render for SSHConnectionView {
             .child(
                 div()
                     .flex()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         button("ssh-copy-path", jayjay_i18n::ssh::copy_path(), &t, false).on_click(
                             cx.listener(|view, _, _, cx| {

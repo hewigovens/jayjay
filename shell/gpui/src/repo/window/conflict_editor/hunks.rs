@@ -6,7 +6,7 @@ use jayjay_core::{ConflictEditorData, MergeHunkSource};
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::merge_editor::{merge_hunk_action_links, merge_hunk_card, merge_result_mode_button};
 use crate::ui::merge_scroll::MergeSynchronized as _;
 
@@ -24,15 +24,15 @@ pub(super) fn conflict_result_section(
     let header = div()
         .flex()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .h(px(t.scaled_control_height(36., 11.)))
-        .px(px(10.))
+        .px(ui_size(10.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(jayjay_i18n::repo::result()),
         )
@@ -53,7 +53,7 @@ pub(super) fn conflict_result_section(
         .child(div().flex_1())
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(if raw {
                     jayjay_i18n::repo::edit_markers_directly_unresolved_markers_save()

@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::header::{DETAIL_INSET, file_icon_width};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 
 pub(super) fn placeholder_card(
@@ -20,13 +20,13 @@ pub(super) fn placeholder_card(
         .size_full()
         .items_center()
         .justify_center()
-        .gap(px(10.))
-        .px(px(40.))
+        .gap(ui_size(10.))
+        .px(ui_size(40.))
         .bg(rgb(t.detail_bg))
         .child(icons::icon(glyph_str, 28., t.fg_dim))
         .child(
             div()
-                .text_size(ui_font_size(14.))
+                .text_size(ui_size(14.))
                 .text_color(rgb(t.fg))
                 .child(title.into()),
         )
@@ -36,8 +36,8 @@ pub(super) fn placeholder_card(
                 .flex_row()
                 .flex_wrap()
                 .justify_center()
-                .gap(px(4.))
-                .text_size(ui_font_size(11.))
+                .gap(ui_size(4.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(body.into())
                 .children(action),
@@ -56,18 +56,18 @@ pub(super) fn placeholder(
         .size_full()
         .items_center()
         .justify_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .bg(rgb(t.detail_bg))
         .child(
             div()
-                .text_size(ui_font_size(17.))
+                .text_size(ui_size(17.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg_dim))
                 .child(title.into()),
         )
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(t.fg_faint))
                 .child(body.into()),
         )
@@ -101,15 +101,15 @@ pub(crate) fn placeholder_row(
         .flex_col()
         .size_full()
         .justify_center()
-        .gap(px(3.))
-        .px(px(DETAIL_INSET))
+        .gap(ui_size(3.))
+        .px(ui_size(DETAIL_INSET))
         .child(
             div()
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(ICON_GAP))
-                .text_size(ui_font_size(12.))
+                .gap(px(t.scaled_font_size(ICON_GAP)))
+                .text_size(ui_size(12.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(rgb(t.fg))
                 .child(
@@ -125,8 +125,8 @@ pub(crate) fn placeholder_row(
         )
         .children(detail.map(|detail| {
             div()
-                .pl(px(icon_width + ICON_GAP))
-                .text_size(ui_font_size(11.))
+                .pl(px(icon_width + t.scaled_font_size(ICON_GAP)))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .line_clamp(2)
                 .child(detail)

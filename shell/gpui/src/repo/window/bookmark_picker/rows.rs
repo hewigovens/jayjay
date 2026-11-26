@@ -1,12 +1,12 @@
 use gpui::{
     AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, Styled, div, px, rgb,
+    ParentElement, SharedString, Styled, div, rgb,
 };
 use jayjay_core::BookmarkInfo;
 
 use super::BookmarkPickerState;
 use super::entry::BookmarkPickerEntry;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::RepoWindow;
 use crate::repo::window::picker::{PickerSection, row, sections_by_best_match};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
@@ -146,18 +146,18 @@ pub(super) fn bookmark_row(
                 .min_w_0()
                 .flex_1()
                 .flex_col()
-                .gap(px(1.))
+                .gap(ui_size(1.))
                 .child(
                     div()
                         .flex()
                         .items_center()
                         .min_w_0()
-                        .gap(px(6.))
+                        .gap(ui_size(6.))
                         .child(
                             div()
                                 .min_w_0()
                                 .truncate()
-                                .text_size(ui_font_size(13.))
+                                .text_size(ui_size(13.))
                                 .child(SharedString::from(label)),
                         )
                         .child(if bookmark.is_tracking_remote || entry.remote.is_some() {
@@ -169,7 +169,7 @@ pub(super) fn bookmark_row(
                 .children(caption.map(|caption| {
                     div()
                         .truncate()
-                        .text_size(ui_font_size(10.))
+                        .text_size(ui_size(10.))
                         .text_color(rgb(t.fg_dim))
                         .child(caption)
                 })),

@@ -7,7 +7,7 @@ use unicode_width::UnicodeWidthStr;
 
 use super::row::{ChipMenus, ChipRightClick};
 use super::text::{compact_id, id_cell};
-use crate::app::theme::{FONT_ID, FONT_TAG, Theme};
+use crate::app::theme::{FONT_ID, FONT_TAG, Theme, ui_size};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost};
 use crate::repo::window::ref_chips;
@@ -67,9 +67,9 @@ fn dag_chips(change: &ChangeInfo, refresh: RefreshMode) -> Vec<DagChip> {
 
 pub(crate) fn chip_width(label: &str, has_icon: bool, t: &Theme) -> f32 {
     let text = label.width() as f32 * t.scaled_font_size(FONT_TAG) * CHAR_WIDTH_FACTOR;
-    text + 12.
+    text + t.scaled_font_size(12.)
         + if has_icon {
-            t.scaled_font_size(FONT_TAG) + 3.
+            t.scaled_font_size(FONT_TAG) + t.scaled_font_size(3.)
         } else {
             0.
         }
@@ -111,17 +111,18 @@ pub(super) fn tags_row(
     let short_id = compact_id(&change.change_id);
     let change_id_width =
         short_id.chars().count() as f32 * t.scaled_font_size(FONT_ID) * CHAR_WIDTH_FACTOR;
-    let chips_budget = (refs_budget - change_id_width - CHIP_GAP).max(0.);
+    let chip_gap = t.scaled_font_size(CHIP_GAP);
+    let chips_budget = (refs_budget - change_id_width - chip_gap).max(0.);
     let chips = dag_chips(change, refresh);
     let widths: Vec<f32> = chips
         .iter()
         .map(|chip| chip_width(&chip.label(change), chip.has_icon(), t))
         .collect();
     let overflow_width = |hidden: usize| chip_width(&format!("+{hidden}"), false, t);
-    let visible = visible_chip_count(&widths, chips_budget, CHIP_GAP, overflow_width);
+    let visible = visible_chip_count(&widths, chips_budget, chip_gap, overflow_width);
     let hidden = chips.len() - visible;
     let shown_budget = if hidden > 0 {
-        (chips_budget - CHIP_GAP - overflow_width(hidden)).max(0.)
+        (chips_budget - chip_gap - overflow_width(hidden)).max(0.)
     } else {
         chips_budget
     };
@@ -131,7 +132,7 @@ pub(super) fn tags_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(CHIP_GAP))
+        .gap(px(chip_gap))
         .child(id_cell(
             &short_id,
             change.change_id.short_len,
@@ -264,20 +265,16 @@ fn working_copy_chip(row_ix: usize, stale: bool, t: &Theme) -> impl IntoElement 
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(3.))
+        .gap(ui_size(3.))
         .child(chip);
     if !stale {
         return row;
     }
     row.child(
-        icon(
-            glyph::WARNING,
-            t.scaled_font_size(FONT_TAG) + 2.,
-            t.warning_fg,
-        )
-        .id(("stale", row_ix))
-        .debug_selector(|| "dag-stale-working-copy".to_owned())
-        .help(jayjay_i18n::repo::working_copy_is_stale_another_workspace()),
+        icon(glyph::WARNING, FONT_TAG + 2., t.warning_fg)
+            .id(("stale", row_ix))
+            .debug_selector(|| "dag-stale-working-copy".to_owned())
+            .help(jayjay_i18n::repo::working_copy_is_stale_another_workspace()),
     )
 }
 

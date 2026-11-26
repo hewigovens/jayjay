@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::app::fonts::{CodeText as _, mono_advance};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::middle_elide;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
@@ -88,7 +88,8 @@ pub(super) fn repo_init_error_pane(
         };
 
     let advance = mono_advance(cx, px(t.scaled_code_font_size(PATH_FONT_SIZE)));
-    let path_cols = ((CARD_WIDTH - 2. * CARD_PADDING) / f32::from(advance)) as usize;
+    let path_cols =
+        (t.scaled_font_size(CARD_WIDTH - 2. * CARD_PADDING) / f32::from(advance)) as usize;
 
     let mut actions = div().flex().justify_center();
     if can_initialize {
@@ -119,13 +120,13 @@ pub(super) fn repo_init_error_pane(
                 .flex()
                 .flex_col()
                 .items_center()
-                .gap(px(14.))
-                .max_w(px(CARD_WIDTH))
-                .px(px(CARD_PADDING))
+                .gap(ui_size(14.))
+                .max_w(px(t.scaled_font_size(CARD_WIDTH)))
+                .px(px(t.scaled_font_size(CARD_PADDING)))
                 .child(icon(glyph, 40., color))
                 .child(
                     div()
-                        .text_size(ui_font_size(16.))
+                        .text_size(ui_size(16.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child(title),
@@ -138,8 +139,8 @@ pub(super) fn repo_init_error_pane(
                 )
                 .child(
                     div()
-                        .text_size(ui_font_size(12.))
-                        .line_height(ui_font_size(18.))
+                        .text_size(ui_size(12.))
+                        .line_height(ui_size(18.))
                         .text_color(rgb(t.fg_dim))
                         .text_align(gpui::TextAlign::Center)
                         .child(message),

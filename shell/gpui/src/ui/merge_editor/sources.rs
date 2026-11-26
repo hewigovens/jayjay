@@ -3,7 +3,7 @@ use gpui::{
     Stateful, Styled, div, px, rgb,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{button, button_container};
 use crate::ui::text_area::TextArea;
@@ -22,7 +22,7 @@ pub(crate) fn merge_base_toggle(
         (glyph::EYE, jayjay_i18n::merge::show_base())
     };
     button_container(id, t, false)
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .child(icons::icon(icon_glyph, 13., t.toggle_inactive_fg))
         .child(label)
 }
@@ -36,7 +36,7 @@ pub(crate) fn merge_source_row(
         .flex()
         .flex_row()
         .flex_none()
-        .h(px(height))
+        .h(ui_size(height))
         .border_b_1()
         .border_color(rgb(t.border))
         .children(panels)
@@ -62,9 +62,9 @@ pub(crate) fn merge_source_panel(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .h(px(t.scaled_control_height(38., 12.)))
-                .px(px(10.))
+                .px(ui_size(10.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
                 .border_color(rgb(t.border))
@@ -72,7 +72,7 @@ pub(crate) fn merge_source_panel(
                     div()
                         .flex_1()
                         .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .child(label.into()),
                 )
                 .child(action),
@@ -100,7 +100,7 @@ pub(crate) fn merge_result_mode_button(
     let selector = id.to_string();
     let mut result = button(id, label, t, false)
         .debug_selector(move || selector.clone())
-        .text_size(ui_font_size(10.));
+        .text_size(ui_size(10.));
     if !selected {
         result = result.text_color(rgb(t.fg_dim));
     }

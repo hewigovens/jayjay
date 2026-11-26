@@ -22,7 +22,7 @@ pub(super) fn metadata_block(
             .flex()
             .flex_row()
             .items_end()
-            .pr(px(DETAIL_INSET))
+            .pr(px(t.scaled_font_size(DETAIL_INSET)))
             .child(div().flex_1().min_w_0().child(grid(
                 state.change,
                 state.stats,

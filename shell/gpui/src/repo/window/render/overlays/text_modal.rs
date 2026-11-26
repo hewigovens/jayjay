@@ -6,7 +6,7 @@ use gpui::{
 use jayjay_core::diff::DiffSpanStyle;
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::repo::window::commit_ai::generate_button;
 use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalAction};
@@ -106,7 +106,7 @@ fn resize_grip(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         .absolute()
         .right_0()
         .bottom_0()
-        .size(px(18.))
+        .size(ui_size(18.))
         .cursor(CursorStyle::ResizeUpLeftDownRight)
         .debug_selector(|| "text-modal-resize".to_owned())
         .on_mouse_down(
@@ -119,12 +119,12 @@ fn resize_grip(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         .child(
             div()
                 .absolute()
-                .right(px(5.))
-                .bottom(px(5.))
-                .size(px(7.))
+                .right(ui_size(5.))
+                .bottom(ui_size(5.))
+                .size(ui_size(7.))
                 .border_r_2()
                 .border_b_2()
-                .rounded_br(px(3.))
+                .rounded_br(ui_size(3.))
                 .border_color(rgb(t.fg_dim)),
         )
         .into_any_element()
@@ -181,13 +181,13 @@ fn note_context_preview(
                 .flex_row()
                 .items_center()
                 .h(px(ROW_HEIGHT))
-                .px(px(8.))
+                .px(px(t.scaled_code_font_size(8.)))
                 .bg(bg)
                 .code_text(11., t)
                 .child(
                     div()
                         .flex_none()
-                        .w(px(12.))
+                        .w(px(t.scaled_code_font_size(12.)))
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(marker)),
                 ),
@@ -208,8 +208,8 @@ fn note_context_preview(
                 .absolute()
                 .top_0()
                 .bottom_0()
-                .left(px(24.))
-                .right(px(8.))
+                .left(px(t.scaled_code_font_size(24.)))
+                .right(px(t.scaled_code_font_size(8.)))
                 .debug_selector(|| "review-note-selectable-code".to_owned())
                 .child(context_input.clone()),
         )
@@ -224,7 +224,7 @@ fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .code_text(11., t)
         .text_color(rgb(t.fg_dim));
     for path in paths {
@@ -239,7 +239,7 @@ fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
         );
     }
     if paths.len() > MAX_VISIBLE {
-        list = list.h(px(150.)).overflow_y_scroll();
+        list = list.h(ui_size(150.)).overflow_y_scroll();
     }
     list.into_any_element()
 }

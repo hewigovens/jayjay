@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement, Styled,
-    Window, div, px,
+    Window, div,
 };
 
 use super::SettingsView;
@@ -9,7 +9,7 @@ use super::font_preview::font_preview;
 use super::shared::{field_row, form_group, form_section, stepper};
 use crate::app::config::{self, AppConfig};
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{boolean_toggle_button, button};
 use jayjay_i18n::{common, settings};
@@ -40,7 +40,7 @@ pub(super) fn fonts_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .child(form_section(
             settings::interface_font(),
             [
@@ -119,7 +119,7 @@ pub(super) fn fonts_section(
         .child(form_group(
             [div()
                 .flex()
-                .py(px(10.))
+                .py(ui_size(10.))
                 .child(
                     button("setting-reset-fonts", settings::reset_fonts(), t, false)
                         .debug_selector(|| "setting-reset-fonts".to_owned())

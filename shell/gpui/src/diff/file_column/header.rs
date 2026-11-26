@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::config;
-use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
+use crate::app::theme::{HEADER_HEIGHT, Theme, ui_size};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::input::{LineInput, line_input_content};
@@ -77,10 +77,10 @@ pub(super) fn file_column_header(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
-        .py(px(6.))
-        .px(px(14.))
+        .py(ui_size(6.))
+        .px(ui_size(14.))
         .bg(rgb(t.header_bg))
         .debug_selector(|| "file-column-header".to_owned());
     if !file_filter_active {
@@ -124,8 +124,8 @@ pub(super) fn file_column_header(
                     .flex()
                     .items_center()
                     .justify_center()
-                    .w(px(24.))
-                    .h(px(22.))
+                    .w(ui_size(24.))
+                    .h(ui_size(22.))
                     .rounded_md()
                     .cursor_pointer()
                     .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -169,12 +169,12 @@ pub(super) fn file_column_header(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(3.))
+                .gap(ui_size(3.))
                 .h(px(t.scaled_control_height(22., 10.)))
-                .px(px(6.))
+                .px(ui_size(6.))
                 .rounded_md()
                 .bg(rgb(bg))
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(rgb(fg))
                 .cursor_pointer()
@@ -243,7 +243,7 @@ pub(super) fn file_column_header(
     let count_label = div()
         .id("file-count")
         .flex_none()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(label));
     let count_label = if shows_progress {
@@ -257,7 +257,8 @@ pub(super) fn file_column_header(
     } else {
         count_label
     };
-    row.child(div().flex_1().min_w(px(8.))).child(count_label)
+    row.child(div().flex_1().min_w(ui_size(8.)))
+        .child(count_label)
 }
 
 fn toggle_colors(active: bool, t: &Theme) -> (u32, u32) {
@@ -279,9 +280,9 @@ pub(super) fn file_filter_bar(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(4.))
-        .px(px(14.))
-        .pb(px(6.))
+        .gap(ui_size(4.))
+        .px(ui_size(14.))
+        .pb(ui_size(6.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
@@ -294,12 +295,12 @@ pub(super) fn file_filter_bar(
                 .flex_1()
                 .min_w_0()
                 .h(px(t.scaled_control_height(26., 11.)))
-                .px(px(8.))
+                .px(ui_size(8.))
                 .rounded_md()
                 .border_1()
                 .border_color(rgb(t.border))
                 .bg(rgb(t.detail_bg))
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .cursor_text()
                 .track_focus(focus)
                 .focus(|style| style.border_color(rgb(t.selected_accent)))

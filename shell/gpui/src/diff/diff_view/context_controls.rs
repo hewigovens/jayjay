@@ -4,7 +4,7 @@ use gpui::{
 };
 use jayjay_core::diff::{ContextExpansion, ContextRegion};
 
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::button;
 
@@ -17,14 +17,14 @@ pub(super) fn context_error_banner(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(super::header::DETAIL_INSET))
-        .py(px(6.))
+        .gap(ui_size(8.))
+        .px(ui_size(super::header::DETAIL_INSET))
+        .py(ui_size(6.))
         .bg(rgba(with_alpha(
             t.tag_conflict_fg,
             if t.is_dark { 0x16 } else { 0x0c },
         )))
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg_dim))
         .debug_selector(|| "context-error-banner".to_owned())
         .child(div().flex_1().min_w_0().truncate().child(message))
@@ -56,8 +56,8 @@ pub(super) fn context_controls(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(4.))
-        .ml(px(10.));
+        .gap(ui_size(4.))
+        .ml(ui_size(10.));
     if region.initial_line_count > SHOW_MORE_LINES {
         row = row.child(context_button(
             scope,
@@ -103,9 +103,9 @@ fn context_button(
         .flex()
         .items_center()
         .h(px(theme.scaled_control_height(16., 11.)))
-        .px(px(5.))
+        .px(ui_size(5.))
         .rounded_sm()
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(theme.diff_text_dim))
         .cursor_pointer()
         .hover({

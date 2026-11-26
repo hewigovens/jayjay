@@ -1,9 +1,9 @@
 use crate::app::config::AppConfig;
-use gpui::{AnyElement, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, IntoElement, ParentElement, Styled, div};
 use jayjay_i18n::settings;
 
 use super::shared::{form_section, toggle_field};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 
 pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
@@ -11,7 +11,7 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .children([
             form_section(
                 settings::display(),

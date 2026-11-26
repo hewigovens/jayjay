@@ -1,12 +1,12 @@
 use gpui::{
     Div, FontWeight, InteractiveElement, ParentElement, StatefulInteractiveElement, Styled, div,
-    px, rgb,
+    rgb,
 };
 use jayjay_core::repositories::RepoGroup;
 
 use super::card::repository_card;
 use crate::app::config;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::button;
 
 pub(super) fn recent_section(groups: Vec<RepoGroup>, pinned_paths: &[String], t: &Theme) -> Div {
@@ -16,7 +16,7 @@ pub(super) fn recent_section(groups: Vec<RepoGroup>, pinned_paths: &[String], t:
             .flex_1()
             .items_center()
             .justify_center()
-            .text_size(ui_font_size(12.))
+            .text_size(ui_size(12.))
             .text_color(rgb(t.fg_dim))
             .child(jayjay_i18n::menu::no_recent_repositories());
     }
@@ -42,15 +42,15 @@ pub(super) fn repository_section(
     pinned_paths: &[String],
     t: &Theme,
 ) -> Div {
-    let mut rows = div().flex().flex_col().gap(px(10.));
+    let mut rows = div().flex().flex_col().gap(ui_size(10.));
     for (index, group) in groups.into_iter().enumerate() {
         rows = rows.child(repository_card(index, group, kind, pinned_paths, t));
     }
 
-    let mut header = div().flex().items_center().pb(px(2.)).child(
+    let mut header = div().flex().items_center().pb(ui_size(2.)).child(
         div()
             .flex_1()
-            .text_size(ui_font_size(13.))
+            .text_size(ui_size(13.))
             .font_weight(FontWeight::SEMIBOLD)
             .child(title),
     );
@@ -64,7 +64,7 @@ pub(super) fn repository_section(
     div()
         .flex()
         .flex_col()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(header)
         .child(rows)
 }

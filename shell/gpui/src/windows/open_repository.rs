@@ -8,7 +8,7 @@ use gpui::{
 };
 
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::ui::primitives::button;
 use crate::ui::text_area::{Newline, TextArea};
 
@@ -80,18 +80,18 @@ impl Render for OpenRepositoryPathView {
             .flex()
             .flex_col()
             .size_full()
-            .gap(px(12.))
-            .p(px(24.))
+            .gap(ui_size(12.))
+            .p(ui_size(24.))
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
             .child(
                 div()
-                    .text_size(ui_font_size(18.))
+                    .text_size(ui_size(18.))
                     .child(jayjay_i18n::onboarding::choose_a_repository_directory()),
             )
             .child(
                 div()
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .text_color(rgb(t.fg_dim))
                     .child(jayjay_i18n::onboarding::the_desktop_file_picker_is_unavailable()),
             )
@@ -106,7 +106,7 @@ impl Render for OpenRepositoryPathView {
                 root.child(
                     div()
                         .id("open-repository-path-error")
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.error_fg))
                         .child(error),
                 )
@@ -116,7 +116,7 @@ impl Render for OpenRepositoryPathView {
                     .flex()
                     .flex_row()
                     .justify_end()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         button(
                             "open-repository-path-cancel",

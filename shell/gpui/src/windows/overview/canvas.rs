@@ -14,7 +14,7 @@ use jayjay_core::{
 
 use super::OverviewView;
 use super::placement::{Geometry, Placement};
-use crate::app::theme::{FONT_TAG, Theme, ui_font_size};
+use crate::app::theme::{FONT_TAG, Theme, ui_size};
 use crate::repo::window::{
     DagNodeStyle, LinePattern, NodeFill, NodeShape, chip_width, compact_id, format_relative,
     id_cell, paint_node, stroke_line_pattern, visible_chip_count,
@@ -46,16 +46,16 @@ impl OverviewView {
                 .child(
                     trunk_label(base, trunk_name, t)
                         .absolute()
-                        .left(px(g.spine_x + 12.))
-                        .top(px(band.y - g.row_height - 2.))
+                        .left(px(g.spine_x + t.scaled_font_size(12.)))
+                        .top(px(band.y - g.row_height - t.scaled_font_size(2.)))
                         .w(px(g.trunk_label_width))
                         .h(px(g.row_height)),
                 )
                 .child(
                     base_detail(base, t)
                         .absolute()
-                        .left(px(g.spine_x + 12.))
-                        .top(px(band.y + 4.))
+                        .left(px(g.spine_x + t.scaled_font_size(12.)))
+                        .top(px(band.y + t.scaled_font_size(4.)))
                         .w(px(g.trunk_label_width)),
                 );
         }
@@ -120,11 +120,11 @@ impl OverviewView {
             .debug_selector(move || format!("overview-lane-{head}"))
             .flex()
             .flex_col()
-            .gap(px(4.))
-            .pl(px(12. - inset))
-            .pr(px(10. - inset))
-            .py(px(8. - inset))
-            .rounded(px(8.))
+            .gap(ui_size(4.))
+            .pl(ui_size(12. - inset))
+            .pr(ui_size(10. - inset))
+            .py(ui_size(8. - inset))
+            .rounded(ui_size(8.))
             .bg(rgb(t.detail_bg))
             .border(px(1. + inset))
             .border_color(rgb(border))
@@ -132,7 +132,7 @@ impl OverviewView {
             .child(
                 div()
                     .h(px(t.scaled_font_size(32.)))
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .line_height(px(t.scaled_font_size(16.)))
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_color(rgb(description_color(&lane.head().description, t)))
@@ -144,14 +144,18 @@ impl OverviewView {
                     .flex()
                     .flex_row()
                     .items_center()
-                    .gap(px(CHIP_GAP))
+                    .gap(px(t.scaled_font_size(CHIP_GAP)))
                     .h(px(t.scaled_font_size(16.)))
                     .overflow_hidden()
-                    .children(lane_chips(lane, g.column_width - 24., t)),
+                    .children(lane_chips(
+                        lane,
+                        g.column_width - t.scaled_font_size(24.),
+                        t,
+                    )),
             )
             .child(
                 div()
-                    .text_size(ui_font_size(10.))
+                    .text_size(ui_size(10.))
                     .text_color(rgb(if needs_attention {
                         t.warning_fg
                     } else {
@@ -195,9 +199,9 @@ impl OverviewView {
             .flex()
             .flex_row()
             .items_center()
-            .gap(px(6.))
-            .pr(px(4.))
-            .rounded(px(4.))
+            .gap(ui_size(6.))
+            .pr(ui_size(4.))
+            .rounded(ui_size(4.))
             .when(chosen, |row| row.bg(rgb(t.selected_bg)))
             .cursor_pointer()
             .child(
@@ -222,7 +226,7 @@ impl OverviewView {
                 div()
                     .flex_1()
                     .min_w_0()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(description_color(&change.description, t)))
                     .whitespace_nowrap()
                     .overflow_hidden()
@@ -257,6 +261,7 @@ fn lines(
     let muted = mix(t.dag_line, t.detail_bg, 0.45);
     let background = t.detail_bg;
     let warning = t.warning_fg;
+    let diamond = t.scaled_font_size(6.);
     let stems: Vec<(f32, f32, f32)> = placement
         .lanes_in(span)
         .map(|placed| {
@@ -277,10 +282,10 @@ fn lines(
     let spine = match (placement.bands.first(), placement.bands.last()) {
         (Some(first), Some(last)) if first.y != last.y => {
             const DASH_PERIOD: f32 = 7.;
-            let top = first.y + 6.;
+            let top = first.y + diamond;
             // Align to the dash period so the pattern doesn't crawl while scrolling.
             let start = top + ((span.start - top) / DASH_PERIOD).floor().max(0.) * DASH_PERIOD;
-            let end = (last.y - 6.).min(span.end);
+            let end = (last.y - diamond).min(span.end);
             (start < end).then_some((start, end))
         }
         _ => None,
@@ -310,7 +315,7 @@ fn lines(
                 );
             }
             for &(y, last_x, older) in &bands {
-                let (x0, y0) = at(g.spine_x + 6., y);
+                let (x0, y0) = at(g.spine_x + diamond, y);
                 let (x1, _) = at(last_x, y);
                 stroke_line_pattern(window, x0, y0, x1, y0, muted, LinePattern::Solid);
                 let (cx, cy) = at(g.spine_x, y);
@@ -324,7 +329,7 @@ fn lines(
                         cy,
                         DagNodeStyle {
                             shape: NodeShape::Diamond,
-                            radius: 6.,
+                            radius: diamond,
                             fill,
                         },
                     );
@@ -357,7 +362,7 @@ fn node(change: &OverviewChange, t: &Theme) -> gpui::Div {
     };
     div().flex().items_center().justify_center().child(
         div()
-            .size(px(radius * 2.))
+            .size(ui_size(radius * 2.))
             .rounded_full()
             .bg(rgb(fill))
             .when(hollow, |dot| {
@@ -399,7 +404,7 @@ fn lane_chips(lane: &OverviewLane, budget: f32, t: &Theme) -> Vec<AnyElement> {
         .iter()
         .map(|(label, ..)| chip_width(label, false, t))
         .collect();
-    let shown = visible_chip_count(&widths, budget, CHIP_GAP, |hidden| {
+    let shown = visible_chip_count(&widths, budget, t.scaled_font_size(CHIP_GAP), |hidden| {
         chip_width(&format!("+{hidden}"), false, t)
     });
     let mut elements: Vec<AnyElement> = chips
@@ -447,8 +452,8 @@ fn trunk_label(base: &OverviewBase, trunk_name: &str, t: &Theme) -> gpui::Div {
     div()
         .flex()
         .items_center()
-        .px(px(4.))
-        .text_size(ui_font_size(11.))
+        .px(ui_size(4.))
+        .text_size(ui_size(11.))
         .font_weight(FontWeight::SEMIBOLD)
         .text_color(rgb(tint))
         .whitespace_nowrap()
@@ -462,8 +467,8 @@ fn base_detail(base: &OverviewBase, t: &Theme) -> gpui::Div {
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
-        .px(px(4.))
+        .gap(ui_size(6.))
+        .px(ui_size(4.))
         .child(id_cell(
             &compact_id(&base.commit_id),
             base.commit_id.short_len,
@@ -473,7 +478,7 @@ fn base_detail(base: &OverviewBase, t: &Theme) -> gpui::Div {
         ))
         .child(
             div()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .text_color(rgb(t.fg_faint))
                 .whitespace_nowrap()
                 .child(SharedString::from(format_relative(base.timestamp_millis))),

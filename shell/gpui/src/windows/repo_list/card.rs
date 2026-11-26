@@ -2,14 +2,14 @@ use std::path::PathBuf;
 
 use gpui::{
     AnyElement, Div, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::repositories::RepoGroup;
 
 use super::actions::repository_actions;
 use super::sections::RowKind;
 use crate::app::repositories;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 
 pub(super) fn repository_card(
@@ -31,7 +31,7 @@ pub(super) fn repository_card(
         let open_path = root_path.clone();
         card_container(format!("{prefix}-row-{index}"), t)
             .items_center()
-            .gap(px(8.))
+            .gap(ui_size(8.))
             .cursor_pointer()
             .hover(|style| style.bg(rgb(t.selected_bg)))
             .on_click(move |_, _, cx| {
@@ -43,18 +43,18 @@ pub(super) fn repository_card(
                     .flex_1()
                     .min_w_0()
                     .flex_col()
-                    .gap(px(2.))
+                    .gap(ui_size(2.))
                     .child(
                         div()
                             .truncate()
-                            .text_size(ui_font_size(12.))
+                            .text_size(ui_size(12.))
                             .font_weight(FontWeight::MEDIUM)
                             .child(repositories::repository_name(&root_path)),
                     )
                     .child(
                         div()
                             .truncate()
-                            .text_size(ui_font_size(10.))
+                            .text_size(ui_size(10.))
                             .text_color(rgb(t.fg_dim))
                             .child(root_path.clone()),
                     ),
@@ -65,18 +65,18 @@ pub(super) fn repository_card(
         let group_prefix = format!("{prefix}-group-{index}");
         let mut card = card_container(group_prefix.clone(), t)
             .flex_col()
-            .gap(px(7.))
+            .gap(ui_size(7.))
             .child(
                 div()
                     .flex()
                     .items_center()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         div()
                             .min_w_0()
                             .flex_1()
                             .truncate()
-                            .text_size(ui_font_size(12.))
+                            .text_size(ui_size(12.))
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(repositories::repository_name(&root_path)),
                     )
@@ -121,7 +121,7 @@ fn card_container(id: String, t: &Theme) -> gpui::Stateful<Div> {
         .id(id.clone())
         .debug_selector(move || id.to_string())
         .flex()
-        .p(px(8.))
+        .p(ui_size(8.))
         .rounded_lg()
         .bg(rgb(t.row_alt_bg))
 }
@@ -147,8 +147,8 @@ fn workspace_entry_row(
         .flex()
         .items_center()
         .min_w_0()
-        .gap(px(6.))
-        .pl(px(6.))
+        .gap(ui_size(6.))
+        .pl(ui_size(6.))
         .rounded_md()
         .cursor_pointer()
         .hover(|style| style.bg(rgb(t.selected_bg)))
@@ -159,7 +159,7 @@ fn workspace_entry_row(
         .child(
             div()
                 .flex_none()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(FontWeight::MEDIUM)
                 .child(name),
         )
@@ -168,7 +168,7 @@ fn workspace_entry_row(
                 .min_w_0()
                 .flex_1()
                 .truncate()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .text_color(rgb(t.fg_dim))
                 .child(path.clone()),
         );

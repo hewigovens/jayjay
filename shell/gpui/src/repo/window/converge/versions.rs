@@ -1,5 +1,5 @@
 use gpui::prelude::FluentBuilder;
-use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, div, px, rgb};
+use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, div, rgb};
 use jayjay_core::ConvergeVersion;
 use jayjay_core::converge::ConvergeItem;
 
@@ -7,6 +7,7 @@ use super::body::ConvergeBody;
 use super::cards::value_text;
 use super::render::{caption, card_frame, heading, link};
 use crate::app::fonts::CodeText as _;
+use crate::app::theme::ui_size;
 use crate::repo::window::{RepoWindow, first_line};
 use crate::ui::primitives::capsule;
 
@@ -21,12 +22,12 @@ impl ConvergeBody<'_> {
         div()
             .flex()
             .flex_col()
-            .gap(px(8.))
+            .gap(ui_size(8.))
             .child(
                 div()
                     .flex()
                     .items_baseline()
-                    .gap(px(10.))
+                    .gap(ui_size(10.))
                     .child(heading(jayjay_i18n::converge::versions()))
                     .child(caption(jayjay_i18n::converge::versions_hint(), t)),
             )
@@ -37,7 +38,7 @@ impl ConvergeBody<'_> {
             .child(
                 div()
                     .flex()
-                    .gap(px(10.))
+                    .gap(ui_size(10.))
                     .when(!side_by_side, |row| row.flex_col())
                     .children(cards),
             )
@@ -65,13 +66,13 @@ impl ConvergeBody<'_> {
         card_frame(t)
             .flex_1()
             .min_w_0()
-            .gap(px(4.))
-            .p(px(10.))
+            .gap(ui_size(4.))
+            .p(ui_size(10.))
             .child(
                 div()
                     .flex()
                     .items_center()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(capsule(
                         letter.to_string(),
                         t.toggle_active_bg,

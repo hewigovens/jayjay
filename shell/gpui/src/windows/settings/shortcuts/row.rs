@@ -1,12 +1,12 @@
 use super::pending_edit::PendingEdit;
 use super::view::ShortcutSettings;
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::key_cap;
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
-    Context, Div, FontWeight, InteractiveElement, IntoElement, ParentElement, Styled, div, px, rgb,
+    Context, Div, FontWeight, InteractiveElement, IntoElement, ParentElement, Styled, div, rgb,
 };
 use jayjay_core::shortcuts::{EffectiveBindings, EffectiveEntry, ShortcutContext};
 use jayjay_i18n::{common, shortcuts};
@@ -19,12 +19,12 @@ const EMPTY_WIDTH: f32 = 78.;
 impl ShortcutSettings {
     pub(super) fn group_title(context: ShortcutContext, t: &Theme) -> Div {
         div()
-            .mt(px(8.))
-            .px(px(8.))
-            .py(px(6.))
+            .mt(ui_size(8.))
+            .px(ui_size(8.))
+            .py(ui_size(6.))
             .rounded_sm()
             .bg(rgb(t.row_alt_bg))
-            .text_size(ui_font_size(11.))
+            .text_size(ui_size(11.))
             .font_weight(FontWeight::BOLD)
             .text_color(rgb(t.fg_dim))
             .child(context.title().to_uppercase())
@@ -72,7 +72,7 @@ impl ShortcutSettings {
             .flex()
             .items_center()
             .justify_center()
-            .gap(px(3.));
+            .gap(ui_size(3.));
         if unbound && recording {
             caps = caps
                 .text_color(rgb(t.fg_faint))
@@ -80,7 +80,7 @@ impl ShortcutSettings {
         }
         for (ix, chord) in chords.into_iter().enumerate() {
             if ix > 0 {
-                caps = caps.child(div().px(px(2.)).text_color(rgb(t.fg_faint)).child("/"));
+                caps = caps.child(div().px(ui_size(2.)).text_color(rgb(t.fg_faint)).child("/"));
             }
             for symbol in chord {
                 caps = caps.child(
@@ -93,8 +93,8 @@ impl ShortcutSettings {
         if unbound && editable {
             caps = caps.child(
                 div()
-                    .w(px(EMPTY_WIDTH))
-                    .h(px(22.))
+                    .w(ui_size(EMPTY_WIDTH))
+                    .h(ui_size(22.))
                     .flex()
                     .items_center()
                     .justify_center()
@@ -106,9 +106,9 @@ impl ShortcutSettings {
         }
         if recording && let Some(color) = border {
             caps = caps
-                .min_w(px(EMPTY_WIDTH))
-                .h(px(22.))
-                .px(px(3.))
+                .min_w(ui_size(EMPTY_WIDTH))
+                .h(ui_size(22.))
+                .px(ui_size(3.))
                 .rounded_md()
                 .border_1()
                 .border_color(rgb(color));
@@ -122,7 +122,7 @@ impl ShortcutSettings {
                     .on_mouse_down_out(cx.listener(|this, _, _, cx| this.cancel(cx)))
             })
             .h_full()
-            .px(px(3.))
+            .px(ui_size(3.))
             .flex()
             .items_center()
             .rounded_md()
@@ -150,35 +150,38 @@ impl ShortcutSettings {
         };
         let chord = div()
             .flex_none()
-            .min_w(px(CHORD_WIDTH))
+            .min_w(ui_size(CHORD_WIDTH))
             .flex()
             .justify_end()
-            .h(px(28.))
-            .text_size(ui_font_size(12.))
+            .h(ui_size(28.))
+            .text_size(ui_size(12.))
             .child(chord);
-        let reset = div().flex_none().w(px(RESET_WIDTH)).when(modified, |slot| {
-            slot.child(Self::icon_button(
-                format!("shortcut-reset-{}", command.id()),
-                glyph::ARROW_UTURN_BACK,
-                shortcuts::reset(),
-                t,
-                cx,
-                move |this, _, cx| this.apply(PendingEdit::Reset(command), false, cx),
-            ))
-        });
+        let reset = div()
+            .flex_none()
+            .w(ui_size(RESET_WIDTH))
+            .when(modified, |slot| {
+                slot.child(Self::icon_button(
+                    format!("shortcut-reset-{}", command.id()),
+                    glyph::ARROW_UTURN_BACK,
+                    shortcuts::reset(),
+                    t,
+                    cx,
+                    move |this, _, cx| this.apply(PendingEdit::Reset(command), false, cx),
+                ))
+            });
         let mut row = div()
             .flex()
             .flex_col()
-            .gap(px(4.))
-            .px(px(8.))
-            .py(px(5.))
+            .gap(ui_size(4.))
+            .px(ui_size(8.))
+            .py(ui_size(5.))
             .border_b_1()
             .border_color(rgb(t.border))
             .child(
                 div()
                     .flex()
                     .items_center()
-                    .gap(px(6.))
+                    .gap(ui_size(6.))
                     .child(
                         div()
                             .flex_1()
@@ -200,7 +203,11 @@ impl ShortcutSettings {
 
     fn note(&self, message: String, pending: bool, t: &Theme, cx: &Context<Self>) -> Div {
         let color = if pending { t.warning_fg } else { t.error_fg };
-        let mut actions = div().flex_none().min_w(px(CHORD_WIDTH)).flex().gap(px(6.));
+        let mut actions = div()
+            .flex_none()
+            .min_w(ui_size(CHORD_WIDTH))
+            .flex()
+            .gap(ui_size(6.));
         if pending && self.replace_allowed {
             actions = actions.child(
                 Self::button(
@@ -236,8 +243,8 @@ impl ShortcutSettings {
         div()
             .flex()
             .items_center()
-            .gap(px(6.))
-            .text_size(ui_font_size(11.))
+            .gap(ui_size(6.))
+            .text_size(ui_size(11.))
             .child(
                 div()
                     .flex_1()

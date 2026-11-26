@@ -7,7 +7,7 @@ use jayjay_core::{RevsetFilter, RevsetFilterKind};
 
 use super::super::{FocusStop, RepoWindow, focus_ring, picker};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::line_input_content;
 use crate::ui::primitives::HelpTag;
@@ -44,12 +44,12 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(2.))
-        .w(px(WIDTH))
-        .min_w(px(MIN_WIDTH))
-        .h(px(HEIGHT))
-        .pl(px(4.))
-        .pr(px(if narrowed && !editing { 4. } else { 10. }))
+        .gap(ui_size(2.))
+        .w(ui_size(WIDTH))
+        .min_w(ui_size(MIN_WIDTH))
+        .h(ui_size(HEIGHT))
+        .pl(ui_size(4.))
+        .pr(ui_size(if narrowed && !editing { 4. } else { 10. }))
         .rounded_full()
         .bg(rgb(background))
         .when(bordered, |el| {
@@ -157,7 +157,7 @@ fn summary(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(7.))
+        .gap(ui_size(7.))
         .flex_1()
         .min_w_0()
         .h_full()
@@ -170,7 +170,7 @@ fn summary(
         summary = summary.child(
             div()
                 .flex_none()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .when(narrowed, |el| el.font_weight(gpui::FontWeight::MEDIUM))
                 .text_color(rgb(if narrowed {
                     t.toggle_active_fg
@@ -216,7 +216,7 @@ fn bar_icon(
             .flex_none()
             .items_center()
             .justify_center()
-            .w(px(26.))
+            .w(ui_size(26.))
             .h_full()
             .rounded_full()
             .cursor_pointer()

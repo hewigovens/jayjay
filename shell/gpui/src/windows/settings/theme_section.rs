@@ -7,7 +7,7 @@ use super::SettingsView;
 use super::font_preview::theme_preview;
 use super::shared::{DETAIL_FONT_SIZE, ROW_FONT_SIZE, field_row, form_section};
 use crate::app::config::{self, AppConfig, AppearanceMode};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::navigation::{ListNavKeys, list_nav_from_key, move_index};
 use jayjay_core::{ColorTheme, color_themes};
@@ -36,7 +36,7 @@ pub(super) fn theme_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(form_section(
             settings::colors(),
             [
@@ -52,8 +52,8 @@ pub(super) fn theme_section(
         ))
         .child(
             div()
-                .px(px(12.))
-                .text_size(ui_font_size(DETAIL_FONT_SIZE))
+                .px(ui_size(12.))
+                .text_size(ui_size(DETAIL_FONT_SIZE))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(footnote)),
         )
@@ -68,8 +68,8 @@ fn theme_side_segmented(
     div()
         .flex()
         .flex_row()
-        .gap(px(1.))
-        .p(px(2.))
+        .gap(ui_size(1.))
+        .p(ui_size(2.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
         .child(theme_side_option(
@@ -107,11 +107,11 @@ fn theme_side_option(
     div()
         .id(SharedString::from(id))
         .debug_selector(move || id.to_owned())
-        .px(px(10.))
-        .py(px(3.))
+        .px(ui_size(10.))
+        .py(ui_size(3.))
         .rounded_md()
         .bg(rgb(bg))
-        .text_size(ui_font_size(ROW_FONT_SIZE))
+        .text_size(ui_size(ROW_FONT_SIZE))
         .text_color(rgb(fg))
         .cursor_pointer()
         .on_click(cx.listener(move |view, _: &ClickEvent, _w, cx| {
@@ -139,8 +139,8 @@ fn theme_picker_and_preview(
         .flex_col()
         .w_full()
         .min_w_0()
-        .py(px(10.))
-        .gap(px(8.))
+        .py(ui_size(10.))
+        .gap(ui_size(8.))
         .child(
             div()
                 .id("settings-theme-list")
@@ -148,9 +148,9 @@ fn theme_picker_and_preview(
                 .flex()
                 .flex_col()
                 .w_full()
-                .p(px(4.))
-                .gap(px(2.))
-                .rounded(px(8.))
+                .p(ui_size(4.))
+                .gap(ui_size(2.))
+                .rounded(ui_size(8.))
                 .border_1()
                 .border_color(rgb(t.border))
                 .bg(rgb(t.detail_bg))
@@ -171,7 +171,7 @@ fn theme_row(theme: &ColorTheme, is_selected: bool, edited_dark: bool, t: &Theme
     let checkmark = if is_selected {
         icons::icon(glyph::CHECK, 13., t.selected_accent).into_any_element()
     } else {
-        div().w(px(13.)).into_any_element()
+        div().w(ui_size(13.)).into_any_element()
     };
 
     div()
@@ -182,11 +182,11 @@ fn theme_row(theme: &ColorTheme, is_selected: bool, edited_dark: bool, t: &Theme
         .items_center()
         .w_full()
         .h(px(t.scaled_control_height(30., ROW_FONT_SIZE)))
-        .px(px(8.))
-        .gap(px(8.))
-        .rounded(px(6.))
+        .px(ui_size(8.))
+        .gap(ui_size(8.))
+        .rounded(ui_size(6.))
         .bg(rgb(row_bg))
-        .text_size(ui_font_size(ROW_FONT_SIZE))
+        .text_size(ui_size(ROW_FONT_SIZE))
         .text_color(rgb(t.fg))
         .cursor_pointer()
         .hover(move |s| {
@@ -219,17 +219,23 @@ fn theme_row(theme: &ColorTheme, is_selected: bool, edited_dark: bool, t: &Theme
 }
 
 fn theme_swatch_tile(theme: &ColorTheme, t: &Theme) -> AnyElement {
-    let bar = |color: u32| div().w(px(3.)).h(px(10.)).rounded(px(1.)).bg(rgb(color));
+    let bar = |color: u32| {
+        div()
+            .w(ui_size(3.))
+            .h(ui_size(10.))
+            .rounded(ui_size(1.))
+            .bg(rgb(color))
+    };
     div()
         .flex_none()
         .flex()
         .flex_row()
         .items_center()
         .justify_center()
-        .gap(px(2.))
-        .w(px(22.))
-        .h(px(16.))
-        .rounded(px(4.))
+        .gap(ui_size(2.))
+        .w(ui_size(22.))
+        .h(ui_size(16.))
+        .rounded(ui_size(4.))
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(theme.seed.background))

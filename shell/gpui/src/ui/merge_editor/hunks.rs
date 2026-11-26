@@ -8,7 +8,7 @@ use jayjay_core::{MergeEditorHunk, MergeHunkSource};
 use crate::app::actions::{MergeUseLeftHunk, MergeUseRightHunk};
 use crate::app::fonts::CodeText as _;
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::line::{content_row, line_bg_color};
 use crate::ui::primitives::HelpTag;
 
@@ -32,9 +32,9 @@ fn merge_hunk_action_link(
         .flex()
         .items_center()
         .h(px(t.scaled_control_height(20., 10.)))
-        .px(px(5.))
+        .px(ui_size(5.))
         .rounded_sm()
-        .text_size(ui_font_size(10.))
+        .text_size(ui_size(10.))
         .text_color(rgb(t.diff_text_dim))
         .child(label);
     if enabled {
@@ -105,8 +105,8 @@ pub(crate) fn merge_hunk_list_container(
         .flex_col()
         .flex_1()
         .min_h_0()
-        .gap(px(12.))
-        .p(px(12.))
+        .gap(ui_size(12.))
+        .p(ui_size(12.))
         .overflow_y_scroll()
         .track_scroll(scroll)
         .children(cards)
@@ -136,19 +136,19 @@ pub(crate) fn merge_hunk_card(
             div()
                 .flex()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .h(px(t.scaled_control_height(34., 11.)))
-                .px(px(10.))
+                .px(ui_size(10.))
                 .bg(rgb(t.header_bg))
                 .child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(jayjay_i18n::merge::conflict_number(hunk.index + 1)),
                 )
                 .child(
                     div()
-                        .text_size(ui_font_size(10.))
+                        .text_size(ui_size(10.))
                         .text_color(rgb(if unresolved {
                             t.tag_conflict_fg
                         } else {
@@ -166,9 +166,9 @@ pub(crate) fn merge_hunk_card(
             div()
                 .flex()
                 .items_center()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .h(px(t.scaled_control_height(30., 10.)))
-                .px(px(8.))
+                .px(ui_size(8.))
                 .border_t_1()
                 .border_b_1()
                 .border_color(rgb(t.border))
@@ -178,7 +178,7 @@ pub(crate) fn merge_hunk_card(
                     div()
                         .flex()
                         .items_center()
-                        .gap(px(8.))
+                        .gap(ui_size(8.))
                         .code_text(10., t)
                         .text_color(rgb(t.fg_faint))
                         .child(format!("− {}", jayjay_i18n::repo::left()))
@@ -217,7 +217,7 @@ fn merge_hunk_diff_line(line: &DiffLine, t: &Theme) -> AnyElement {
         .child(
             div()
                 .flex_none()
-                .w(px(24.))
+                .w(px(t.scaled_code_font_size(24.)))
                 .h(px(t.code_line_height()))
                 .bg(rgb(bg))
                 .border_r_1()

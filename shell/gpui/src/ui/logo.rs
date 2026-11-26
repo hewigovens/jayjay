@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, App, Global, IntoElement, ParentElement, RenderImage, Styled, div, img, px, rgb,
+    AnyElement, App, Global, IntoElement, ParentElement, RenderImage, Styled, div, img, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 
 const LOGO_SVG: &[u8] = include_bytes!("../../assets/icons/logo.svg");
 // GPUI rasterizes at 2x, keeping the largest 88pt logo sharp on high-density displays.
@@ -37,11 +37,11 @@ impl Logo {
     pub(crate) fn image(&self, size: f32) -> AnyElement {
         match &self.image {
             Some(image) => img(image.clone())
-                .w(px(size))
-                .h(px(size))
+                .w(ui_size(size))
+                .h(ui_size(size))
                 .rounded_lg()
                 .into_any_element(),
-            None => div().w(px(size)).h(px(size)).into_any_element(),
+            None => div().w(ui_size(size)).h(ui_size(size)).into_any_element(),
         }
     }
 
@@ -49,16 +49,16 @@ impl Logo {
         let radius = size * 0.225;
         // The macOS `app.icon` fill.
         let mut tile = div()
-            .size(px(size))
-            .rounded(px(radius))
+            .size(ui_size(size))
+            .rounded(ui_size(radius))
             .border_1()
             .border_color(rgb(t.border))
             .bg(rgb(0xffffff));
         if let Some(image) = &self.image {
             tile = tile.child(
                 img(image.clone())
-                    .size(px(size - 2.))
-                    .rounded(px(radius - 1.)),
+                    .size(ui_size(size - 2.))
+                    .rounded(ui_size(radius - 1.)),
             );
         }
         tile.into_any_element()

@@ -2,14 +2,14 @@ use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, StackedPrState};
 use super::stacked_pr_layers::layer_list;
 use super::stacked_pr_results::{centered_message, error_body, results_body};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::{button, icon_label};
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::Stack;
 
@@ -36,10 +36,10 @@ pub(crate) fn stacked_pr_overlay(
         })
         .flex()
         .flex_col()
-        .gap(px(14.))
-        .w(px(480.))
+        .gap(ui_size(14.))
+        .w(ui_size(480.))
         .max_w_full()
-        .p(px(20.))
+        .p(ui_size(20.))
         .rounded_lg()
         .border_1()
         .border_color(rgb(t.border))
@@ -48,16 +48,16 @@ pub(crate) fn stacked_pr_overlay(
             div()
                 .flex()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(
                     icon_label(glyph::GIT_BRANCH, title, 16., t.toggle_active_fg)
-                        .text_size(ui_font_size(15.))
+                        .text_size(ui_size(15.))
                         .font_weight(gpui::FontWeight::SEMIBOLD),
                 )
                 .when(busy, |row| {
                     row.child(
                         div()
-                            .text_size(ui_font_size(11.))
+                            .text_size(ui_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(jayjay_i18n::repo::working_ellipsis()),
                     )
@@ -79,7 +79,7 @@ fn phase_body(state: &StackedPrState, t: &Theme, cx: &mut Context<RepoWindow>) -
             div()
                 .flex()
                 .flex_col()
-                .gap(px(12.))
+                .gap(ui_size(12.))
                 .child(subtitle_row(state, stack, submitting, t, cx))
                 .child(layer_list(state, stack, t, cx))
                 .child(action_row(state, submitting, t, cx))
@@ -105,7 +105,7 @@ fn subtitle_row(
         jayjay_i18n::repo::generate_bookmarks()
     };
     let mut generate = button("stacked-pr-ai-name", label, t, false)
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .opacity(if busy { 0.45 } else { 1. });
     if !busy {
         generate =
@@ -114,12 +114,12 @@ fn subtitle_row(
     div()
         .flex()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::repo::stack_summary(
                     count,
@@ -130,7 +130,7 @@ fn subtitle_row(
             div()
                 .flex()
                 .items_center()
-                .gap(px(4.))
+                .gap(ui_size(4.))
                 .child(icon(glyph::SPARKLE, 11., t.fg_dim))
                 .child(generate),
         )
@@ -157,7 +157,7 @@ fn action_row(
     div()
         .flex()
         .justify_center()
-        .gap(px(12.))
+        .gap(ui_size(12.))
         .child(
             button("stacked-pr-cancel", jayjay_i18n::common::cancel(), t, false)
                 .when(!busy, |button| {

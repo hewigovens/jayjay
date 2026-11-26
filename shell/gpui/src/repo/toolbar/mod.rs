@@ -5,7 +5,7 @@ use gpui::{
     ParentElement, SharedString, Stateful, Styled, div, px, rgb,
 };
 
-use crate::app::theme::{theme, ui_font_size};
+use crate::app::theme::{Theme, theme, ui_size};
 use crate::app::{config, repositories, tools};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::view_model::RefreshMode;
@@ -37,12 +37,18 @@ pub(crate) struct ToolbarRepo {
 
 pub(crate) const TOOLBAR_TRAILING_INSET: f32 = 12.;
 const TOOLBAR_GAP: f32 = 6.;
-pub(crate) const LEADING_TOGGLE_ROOM: f32 =
-    TOOLBAR_LEADING_INSET + TOOLBAR_BUTTON_WIDTH + TOOLBAR_GAP;
-pub(crate) const TRAILING_TOGGLE_ROOM: f32 =
-    TOOLBAR_GAP + TOOLBAR_BUTTON_WIDTH + TOOLBAR_TRAILING_INSET;
+pub(crate) fn leading_toggle_room(t: &Theme) -> f32 {
+    TOOLBAR_LEADING_INSET + t.scaled_font_size(TOOLBAR_BUTTON_WIDTH + TOOLBAR_GAP)
+}
+
+pub(crate) fn trailing_toggle_room(t: &Theme) -> f32 {
+    t.scaled_font_size(TOOLBAR_GAP + TOOLBAR_BUTTON_WIDTH + TOOLBAR_TRAILING_INSET)
+}
+
 /// Aligns the repository name's text with the change header's.
-pub(crate) const TITLE_INSET: f32 = crate::diff::DETAIL_INSET - TITLE_PADDING;
+pub(crate) fn title_inset(t: &Theme) -> f32 {
+    t.scaled_font_size(crate::diff::DETAIL_INSET - TITLE_PADDING)
+}
 const TITLE_PADDING: f32 = 10.;
 
 pub(crate) use buttons::{operation_log_toggle, sidebar_toggle_button};
@@ -55,8 +61,8 @@ fn strip(id: &'static str, cx: &mut Context<RepoWindow>) -> Stateful<Div> {
         .flex_row()
         .flex_none()
         .items_center()
-        .h(px(TOOLBAR_HEIGHT))
-        .gap(px(TOOLBAR_GAP))
+        .h(ui_size(TOOLBAR_HEIGHT))
+        .gap(ui_size(TOOLBAR_GAP))
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(|view, ev: &MouseDownEvent, window, cx| {
@@ -84,7 +90,7 @@ pub(crate) fn sidebar_strip(
     let t = theme(cx).clone();
     strip("toolbar-sidebar-strip", cx)
         .w_full()
-        .pl(px(LEADING_TOGGLE_ROOM))
+        .pl(px(leading_toggle_room(&t)))
         .bg(rgb(t.sidebar_bg))
         .child(buttons::sync_cluster(activity, focused, &t, cx))
         .into_any_element()
@@ -126,18 +132,18 @@ pub(crate) fn toolbar(
         .w_full()
         .min_w_0()
         .bg(rgb(t.detail_bg))
-        .child(div().flex_none().mr(px(-TOOLBAR_GAP)).child(leading))
+        .child(div().flex_none().mr(ui_size(-TOOLBAR_GAP)).child(leading))
         .child(picker_opener(
             div()
                 .id("repo-switcher-button")
                 .debug_selector(|| "repo-switcher-button".to_owned())
                 .flex()
                 .items_center()
-                .gap(px(5.))
-                .h(px(TOOLBAR_BUTTON_HEIGHT))
-                .px(px(TITLE_PADDING))
+                .gap(ui_size(5.))
+                .h(ui_size(TOOLBAR_BUTTON_HEIGHT))
+                .px(ui_size(TITLE_PADDING))
                 .rounded_sm()
-                .text_size(ui_font_size(15.))
+                .text_size(ui_size(15.))
                 .text_color(rgb(t.fg))
                 .cursor_pointer()
                 .hover(|style| style.bg(rgb(t.toolbar_hover_bg)))
@@ -164,7 +170,7 @@ pub(crate) fn toolbar(
                         .debug_selector(move || selector.clone())
                         .flex()
                         .items_center()
-                        .gap(px(5.))
+                        .gap(ui_size(5.))
                         .child(div().text_color(rgb(t.fg_faint)).child("/"))
                         .child(
                             div()
@@ -179,6 +185,6 @@ pub(crate) fn toolbar(
         ))
         .child(revset_bar)
         .child(buttons::tools_cluster(editor, terminal, focused, &t, cx))
-        .child(div().flex_none().ml(px(-TOOLBAR_GAP)).child(trailing))
+        .child(div().flex_none().ml(ui_size(-TOOLBAR_GAP)).child(trailing))
         .into_any_element()
 }

@@ -6,7 +6,7 @@ use jayjay_core::DiffEditDestination;
 
 use super::cards::diff_edit_body;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{button, divider_h};
@@ -75,14 +75,14 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
     div()
         .flex()
         .items_center()
-        .gap(px(12.))
-        .px(px(18.))
-        .py(px(12.))
+        .gap(ui_size(12.))
+        .px(ui_size(18.))
+        .py(ui_size(12.))
         .bg(rgb(t.header_bg))
         .child(icon(glyph::SLIDERS_HORIZONTAL, 15., t.fg))
         .child(
             div()
-                .text_size(ui_font_size(15.))
+                .text_size(ui_size(15.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(jayjay_i18n::repo::diff_edit()),
         )
@@ -105,13 +105,13 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
     let mut row = div()
         .flex()
         .items_center()
-        .gap(px(8.))
-        .px(px(18.))
-        .py(px(10.))
+        .gap(ui_size(8.))
+        .px(ui_size(18.))
+        .py(ui_size(10.))
         .bg(rgb(t.header_bg))
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .child(summary),
         )
@@ -128,18 +128,18 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
         div()
             .id("diff-edit-description")
             .debug_selector(|| "diff-edit-description".to_owned())
-            .w(px(260.))
+            .w(ui_size(260.))
             .h(px(t.scaled_control_height(28., 11.)))
-            .px(px(7.))
+            .px(ui_size(7.))
             .flex()
             .items_center()
-            .gap(px(6.))
+            .gap(ui_size(6.))
             .overflow_hidden()
             .whitespace_nowrap()
             .rounded_md()
             .bg(rgb(t.toggle_inactive_bg))
             .text_color(rgb(t.toggle_inactive_fg))
-            .text_size(ui_font_size(11.))
+            .text_size(ui_size(11.))
             .cursor_pointer()
             .hover(|s| s.bg(rgb(t.row_alt_bg)))
             .on_click(cx.listener(|view, _, _, cx| {

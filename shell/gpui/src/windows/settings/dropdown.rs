@@ -8,7 +8,7 @@ use super::SettingsView;
 use super::shared::ROW_FONT_SIZE;
 use crate::app::config::{current as current_cfg, update as update_cfg};
 use crate::app::fonts::{self, FontCatalog};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use crate::ui::icons::{self, glyph};
 use jayjay_i18n::settings;
@@ -53,12 +53,12 @@ pub(super) fn dropdown_overlay(
         .flex_col()
         .max_h(window.viewport_size().height - px(2. * MENU_MARGIN))
         .overflow_y_scroll()
-        .gap(px(1.))
-        .p(px(8.))
+        .gap(ui_size(1.))
+        .p(ui_size(8.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
-        .rounded(px(14.))
+        .rounded(ui_size(14.))
         .shadow(popup_shadow(t));
 
     let mut group = None;
@@ -114,11 +114,11 @@ pub(super) fn dropdown_button(
         .items_center()
         .justify_center()
         .h(px(t.scaled_control_height(32., ROW_FONT_SIZE)))
-        .pl(px(12.))
-        .pr(px(34.))
+        .pl(ui_size(12.))
+        .pr(ui_size(34.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_size(ui_font_size(ROW_FONT_SIZE))
+        .text_size(ui_size(ROW_FONT_SIZE))
         .text_color(rgb(t.fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -258,12 +258,12 @@ fn dropdown_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .h(px(t.scaled_control_height(34., ROW_FONT_SIZE)))
-        .px(px(10.))
+        .px(ui_size(10.))
         .rounded_lg()
         .bg(rgb(row_bg))
-        .text_size(ui_font_size(ROW_FONT_SIZE))
+        .text_size(ui_size(ROW_FONT_SIZE))
         .text_color(rgb(text_color))
         .cursor_pointer()
         .hover(move |s| s.bg(rgb(hover_bg)))
@@ -303,10 +303,10 @@ fn dropdown_row(
 fn dropdown_group_header(title: SharedString, t: &Theme) -> AnyElement {
     div()
         .flex_none()
-        .px(px(10.))
-        .pt(px(8.))
-        .pb(px(2.))
-        .text_size(ui_font_size(11.))
+        .px(ui_size(10.))
+        .pt(ui_size(8.))
+        .pb(ui_size(2.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(title)
         .into_any_element()
@@ -320,7 +320,7 @@ fn selection_checkmark(is_selected: bool) -> AnyElement {
     };
     div()
         .flex_none()
-        .w(px(20.))
+        .w(ui_size(20.))
         .flex()
         .items_center()
         .justify_center()
@@ -343,14 +343,14 @@ fn popup_shadow(t: &Theme) -> Vec<BoxShadow> {
 fn dropdown_chevrons(t: &Theme) -> AnyElement {
     div()
         .absolute()
-        .right(px(6.))
-        .top(px(5.))
+        .right(ui_size(6.))
+        .top(ui_size(5.))
         .flex_none()
         .flex()
         .items_center()
         .justify_center()
-        .w(px(22.))
-        .h(px(22.))
+        .w(ui_size(22.))
+        .h(ui_size(22.))
         .rounded_full()
         .bg(rgb(t.row_alt_bg))
         .child(icons::icon(glyph::CARET_DOWN, 11., t.fg_dim))

@@ -9,7 +9,7 @@ use super::gutter::{DiffEditLineRowState, diff_edit_line_row};
 use super::header::{header_bg, header_row};
 use super::rows::{DiffEditRow, DiffEditRowModel};
 use crate::app::fonts;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::bounds_capture;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
@@ -112,10 +112,10 @@ fn notice_row(t: &Theme) -> AnyElement {
         .flex()
         .w_full()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .h(px(t.code_line_height()))
-        .px(px(18.))
-        .text_size(ui_font_size(11.))
+        .px(px(t.scaled_code_font_size(18.)))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(icons::icon(glyph::INFO, 11., t.fg_dim))
         .child(jayjay_i18n::repo::projected_renamed_and_non_text_files())
@@ -132,7 +132,7 @@ fn header_pad_row(top: bool, t: &Theme) -> AnyElement {
     div()
         .w_full()
         .h(px(t.code_line_height()))
-        .px(px(18.))
+        .px(px(t.scaled_code_font_size(18.)))
         .child(pad)
         .into_any_element()
 }
@@ -143,8 +143,8 @@ fn placeholder_row(content: AnyElement, t: &Theme) -> AnyElement {
         .w_full()
         .items_center()
         .h(px(t.code_line_height()))
-        .px(px(36.))
-        .text_size(ui_font_size(11.))
+        .px(px(t.scaled_code_font_size(36.)))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(content)
         .into_any_element()

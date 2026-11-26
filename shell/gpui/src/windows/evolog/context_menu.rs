@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use super::EvologView;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{HelpTag, icon_label};
 
@@ -117,8 +117,8 @@ fn menu_panel(
     let mut col = div()
         .flex()
         .flex_col()
-        .min_w(px(210.))
-        .py(px(4.))
+        .min_w(ui_size(210.))
+        .py(ui_size(4.))
         .bg(rgb(theme.detail_bg))
         .border_1()
         .border_color(rgb(theme.border))
@@ -143,10 +143,10 @@ fn menu_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(10.))
-        .py(px(5.))
-        .text_size(ui_font_size(12.))
+        .gap(ui_size(8.))
+        .px(ui_size(10.))
+        .py(ui_size(5.))
+        .text_size(ui_size(12.))
         .child(icon_label(
             item.icon,
             SharedString::from(item.label.clone()),

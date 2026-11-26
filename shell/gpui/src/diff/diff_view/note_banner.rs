@@ -2,12 +2,12 @@
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    StatefulInteractiveElement, Styled, div, rgb, rgba,
 };
 use jayjay_review::{NoteStatus, ReviewNoteStatus};
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::button;
 
@@ -22,9 +22,9 @@ pub(crate) fn stale_notes_banner(
     let mut col = div()
         .flex()
         .flex_col()
-        .gap(px(4.))
-        .px(px(18.))
-        .py(px(8.))
+        .gap(ui_size(4.))
+        .px(ui_size(18.))
+        .py(ui_size(8.))
         .bg(rgba(with_alpha(
             t.tag_conflict_fg,
             if t.is_dark { 0x16 } else { 0x0c },
@@ -51,10 +51,10 @@ fn stale_note_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.tag_conflict_fg))
                 .child(SharedString::from(label)),
@@ -73,7 +73,7 @@ fn stale_note_row(
                 .flex_1()
                 .min_w_0()
                 .truncate()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(status.note.body.clone())),
         )

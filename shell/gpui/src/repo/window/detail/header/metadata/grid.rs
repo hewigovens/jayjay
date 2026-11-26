@@ -7,7 +7,7 @@ use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
 use super::cells::{bookmark_chip, diff_stats, person, tag_chip};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{FONT_ID, Theme, ui_font_size};
+use crate::app::theme::{FONT_ID, Theme, ui_size};
 use crate::diff::DETAIL_INSET;
 use crate::repo::RepoWindow;
 use crate::repo::window::dag_row::{format_when, id_cell};
@@ -23,10 +23,10 @@ pub(super) fn grid(
 ) -> AnyElement {
     let mut col = div()
         .debug_selector(|| "detail-metadata-grid".to_owned())
-        .px(px(DETAIL_INSET))
+        .px(px(t.scaled_font_size(DETAIL_INSET)))
         .flex()
         .flex_col()
-        .gap(px(5.))
+        .gap(ui_size(5.))
         .child(grid_row(
             &jayjay_i18n::repo::author_colon(),
             person(&change.author, "detail-author", t),
@@ -39,7 +39,7 @@ pub(super) fn grid(
                 div()
                     .flex()
                     .flex_col()
-                    .gap(px(5.))
+                    .gap(ui_size(5.))
                     .children(
                         change
                             .co_authors
@@ -57,7 +57,7 @@ pub(super) fn grid(
         .child(grid_row(
             &jayjay_i18n::repo::date_colon(),
             div()
-                .text_size(ui_font_size(FONT_ID))
+                .text_size(ui_size(FONT_ID))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(format_when(
                     change.author.timestamp_millis,
@@ -107,7 +107,7 @@ pub(super) fn grid(
     }
 
     if !change.bookmarks.is_empty() {
-        let mut value = div().flex().flex_row().items_center().gap(px(6.));
+        let mut value = div().flex().flex_row().items_center().gap(ui_size(6.));
         for name in &change.bookmarks {
             value = value.child(bookmark_chip(
                 name,
@@ -127,7 +127,7 @@ pub(super) fn grid(
     }
 
     if !change.tags.is_empty() {
-        let mut value = div().flex().flex_row().items_center().gap(px(6.));
+        let mut value = div().flex().flex_row().items_center().gap(ui_size(6.));
         for name in &change.tags {
             value = value.child(tag_chip(name, t));
         }
@@ -161,7 +161,7 @@ fn grid_row(label: &str, value: AnyElement, align: GridAlign, t: &Theme) -> AnyE
     let row = div()
         .flex()
         .flex_row()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(label_cell(label, t))
         .child(value);
     match align {
@@ -179,7 +179,7 @@ fn label_cell(label: &str, t: &Theme) -> AnyElement {
         .w(px(t.scaled_font_size(FONT_ID) * 6.5))
         .child(
             div()
-                .text_size(ui_font_size(FONT_ID))
+                .text_size(ui_size(FONT_ID))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(label.to_owned())),
         )
@@ -200,7 +200,7 @@ fn id_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .child(id_cell(&id.id, id.short_len, prefix_color, FONT_ID, t))
         .child(copy_feedback_button(
             copy_id.clone(),

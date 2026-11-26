@@ -6,7 +6,7 @@ use gpui::{
 use jayjay_core::{ChangeInfo, CommitAuthor, DiffStats};
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{FONT_ID, Theme, ui_font_size};
+use crate::app::theme::{FONT_ID, Theme, ui_size};
 use crate::repo::RepoWindow;
 use crate::repo::window::ref_chips::{self, copy_feedback_button};
 use crate::ui::primitives::HelpTag;
@@ -21,7 +21,7 @@ pub(super) fn person(person: &CommitAuthor, id: impl Into<ElementId>, t: &Theme)
             div()
                 .min_w_0()
                 .truncate()
-                .text_size(ui_font_size(FONT_ID))
+                .text_size(ui_size(FONT_ID))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(email_label(person))),
         )
@@ -32,9 +32,9 @@ const BYLINE_AVATARS: usize = 3;
 const AVATAR_SIZE: f32 = 14.;
 const AVATAR_OVERLAP: f32 = 4.;
 
-pub(super) fn byline_avatars_width(change: &ChangeInfo) -> f32 {
+pub(super) fn byline_avatars_width(change: &ChangeInfo, t: &Theme) -> f32 {
     let count = (1 + change.co_authors.len()).min(BYLINE_AVATARS) as f32;
-    count * (AVATAR_SIZE + 2.) - (count - 1.) * AVATAR_OVERLAP
+    t.scaled_font_size(count * (AVATAR_SIZE + 2.) - (count - 1.) * AVATAR_OVERLAP)
 }
 
 pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
@@ -51,7 +51,7 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
                 .rounded_full()
                 .border_1()
                 .border_color(rgb(t.detail_bg))
-                .when(index > 0, |avatar| avatar.ml(px(-AVATAR_OVERLAP)))
+                .when(index > 0, |avatar| avatar.ml(ui_size(-AVATAR_OVERLAP)))
                 .child(crate::ui::avatar::element(person, AVATAR_SIZE))
         });
     div()
@@ -60,20 +60,20 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
         .flex_row()
         .flex_none()
         .items_center()
-        .gap(px(5.))
+        .gap(ui_size(5.))
         .child(
             div()
                 .flex()
                 .flex_row()
                 .flex_none()
                 // Overlapping children do not contribute a reliable intrinsic width to the credit row.
-                .w(px(byline_avatars_width(change)))
+                .w(px(byline_avatars_width(change, t)))
                 .children(avatars),
         )
         .child(
             div()
                 .flex_none()
-                .text_size(ui_font_size(FONT_ID))
+                .text_size(ui_size(FONT_ID))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(change.credit_line())),
         )
@@ -101,7 +101,7 @@ fn email_label(person: &CommitAuthor) -> String {
 
 pub(super) fn separator(t: &Theme) -> AnyElement {
     dot_separator(t)
-        .text_size(ui_font_size(FONT_ID))
+        .text_size(ui_size(FONT_ID))
         .into_any_element()
 }
 
@@ -113,7 +113,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
         .flex()
         .flex_row()
         .items_baseline()
-        .gap(px(if spelled_out { 8. } else { 4. }));
+        .gap(ui_size(if spelled_out { 8. } else { 4. }));
     if stats.insertions > 0 {
         row = row.child(diff_stat(
             format!("+{}", stats.insertions),
@@ -138,7 +138,7 @@ fn diff_stat(value: String, caption: Option<String>, color: u32, t: &Theme) -> A
         .flex()
         .flex_row()
         .items_baseline()
-        .gap(px(3.))
+        .gap(ui_size(3.))
         .child(
             div()
                 .code_text(FONT_ID, t)
@@ -148,7 +148,7 @@ fn diff_stat(value: String, caption: Option<String>, color: u32, t: &Theme) -> A
         )
         .children(caption.map(|caption| {
             div()
-                .text_size(ui_font_size(FONT_ID))
+                .text_size(ui_size(FONT_ID))
                 .text_color(rgb(color))
                 .child(caption)
         }))
@@ -173,7 +173,7 @@ pub(super) fn bookmark_chip(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .child(chip)
         .child(copy_feedback_button(
             id,

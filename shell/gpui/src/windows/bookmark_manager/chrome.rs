@@ -1,11 +1,11 @@
 use gpui::{
     AnyElement, ClickEvent, Context, Entity, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    SharedString, StatefulInteractiveElement, Styled, div, rgb, rgba,
 };
 use jayjay_core::BookmarkInfo;
 
 use super::BookmarkManagerView;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{button, checkbox_row};
 use crate::ui::text_area::TextArea;
@@ -43,9 +43,9 @@ pub(super) fn header(filter: Entity<TextArea>, t: &Theme) -> AnyElement {
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(10.))
-        .px(px(16.))
-        .py(px(12.))
+        .gap(ui_size(10.))
+        .px(ui_size(16.))
+        .py(ui_size(12.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
@@ -53,7 +53,7 @@ pub(super) fn header(filter: Entity<TextArea>, t: &Theme) -> AnyElement {
         .child(
             div()
                 .debug_selector(|| "bookmark-manager-title".to_owned())
-                .text_size(ui_font_size(15.))
+                .text_size(ui_size(15.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(jayjay_i18n::menu::bookmark_manager()),
         )
@@ -63,7 +63,7 @@ pub(super) fn header(filter: Entity<TextArea>, t: &Theme) -> AnyElement {
             div()
                 .id("bookmark-filter")
                 .debug_selector(|| "bookmark-filter".to_owned())
-                .w(px(180.))
+                .w(ui_size(180.))
                 .child(filter),
         )
         .into_any_element()
@@ -80,9 +80,9 @@ pub(super) fn stats_bar(
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(12.))
-        .px(px(16.))
-        .py(px(8.))
+        .gap(ui_size(12.))
+        .px(ui_size(16.))
+        .py(ui_size(8.))
         .bg(rgba(with_alpha(t.fg, if t.is_dark { 0x10 } else { 0x08 })))
         .border_b_1()
         .border_color(rgb(t.border))
@@ -146,8 +146,8 @@ pub(super) fn footer(t: &Theme, cx: &mut Context<BookmarkManagerView>) -> AnyEle
         .flex_row()
         .items_center()
         .justify_end()
-        .px(px(16.))
-        .py(px(10.))
+        .px(ui_size(16.))
+        .py(ui_size(10.))
         .border_t_1()
         .border_color(rgb(t.border))
         .child(
@@ -167,11 +167,11 @@ fn stat_badge(id: &'static str, text: String, count: usize, color: u32) -> AnyEl
         .id(selector)
         .debug_selector(move || debug_selector.to_string())
         .flex_none()
-        .px(px(8.))
-        .py(px(3.))
+        .px(ui_size(8.))
+        .py(ui_size(3.))
         .rounded_full()
         .bg(rgba(with_alpha(color, 0x18)))
-        .text_size(ui_font_size(10.))
+        .text_size(ui_size(10.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(color))
         .child(SharedString::from(text))

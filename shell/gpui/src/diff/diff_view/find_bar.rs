@@ -5,7 +5,7 @@ use gpui::{
 
 use super::FindState;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
@@ -29,9 +29,9 @@ pub(crate) fn render_find_bar(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(12.))
-        .py(px(6.))
+        .gap(ui_size(8.))
+        .px(ui_size(12.))
+        .py(ui_size(6.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
@@ -40,7 +40,7 @@ pub(crate) fn render_find_bar(
         .child(
             div()
                 .flex_none()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(count_label)),
         )
@@ -59,7 +59,7 @@ fn search_input(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .flex_1()
         .min_w_0()
         .code_text(12., t)
@@ -83,7 +83,7 @@ fn nav_controls(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .child(nav_button("<", true, enabled, t, cx))
         .child(nav_button(">", false, enabled, t, cx))
         .child(done_button(t, cx))
@@ -137,9 +137,9 @@ fn done_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         .items_center()
         .justify_center()
         .h(px(t.scaled_control_height(20., 11.)))
-        .px(px(6.))
+        .px(ui_size(6.))
         .rounded_md()
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(jayjay_i18n::repo::done())
         .cursor_pointer()

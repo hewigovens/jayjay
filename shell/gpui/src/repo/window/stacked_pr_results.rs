@@ -1,12 +1,12 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    StatefulInteractiveElement, Styled, div, rgb, rgba,
 };
 use jayjay_core::StackLayerOutcome;
 
 use super::RepoWindow;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::button;
 
 pub(super) fn results_body(
@@ -18,8 +18,8 @@ pub(super) fn results_body(
         .id("stacked-pr-results")
         .flex()
         .flex_col()
-        .gap(px(6.))
-        .max_h(px(300.))
+        .gap(ui_size(6.))
+        .max_h(ui_size(300.))
         .overflow_y_scroll();
     for (index, layer) in result.layers.iter().enumerate() {
         let (label, color) = match layer.outcome {
@@ -30,14 +30,14 @@ pub(super) fn results_body(
         let mut title = div()
             .flex()
             .items_center()
-            .gap(px(7.))
+            .gap(ui_size(7.))
             .child(
                 div()
-                    .px(px(5.))
-                    .py(px(2.))
+                    .px(ui_size(5.))
+                    .py(ui_size(2.))
                     .rounded_sm()
                     .bg(rgba((color << 8) | 0x22))
-                    .text_size(ui_font_size(9.))
+                    .text_size(ui_size(9.))
                     .font_weight(gpui::FontWeight::SEMIBOLD)
                     .text_color(rgb(color))
                     .child(label),
@@ -65,12 +65,12 @@ pub(super) fn results_body(
                 .debug_selector(move || format!("stacked-pr-result-{index}"))
                 .flex()
                 .flex_col()
-                .gap(px(4.))
-                .px(px(10.))
-                .py(px(8.))
+                .gap(ui_size(4.))
+                .px(ui_size(10.))
+                .py(ui_size(8.))
                 .rounded_md()
                 .bg(rgb(t.row_alt_bg))
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .child(title)
                 .child(
                     div()
@@ -83,11 +83,11 @@ pub(super) fn results_body(
     div()
         .flex()
         .flex_col()
-        .gap(px(10.))
+        .gap(ui_size(10.))
         .child(list)
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(result.message.clone())),
         )
@@ -104,14 +104,14 @@ pub(super) fn error_body(error: &str, t: &Theme, cx: &mut Context<RepoWindow>) -
     div()
         .flex()
         .flex_col()
-        .gap(px(12.))
+        .gap(ui_size(12.))
         .child(
             div()
-                .px(px(9.))
-                .py(px(8.))
+                .px(ui_size(9.))
+                .py(ui_size(8.))
                 .rounded_md()
                 .bg(rgba((t.error_fg << 8) | 0x18))
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.error_fg))
                 .child(SharedString::from(error.to_owned())),
         )
@@ -119,7 +119,7 @@ pub(super) fn error_body(error: &str, t: &Theme, cx: &mut Context<RepoWindow>) -
             div()
                 .flex()
                 .justify_end()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(
                     button("stacked-pr-close", jayjay_i18n::common::close(), t, false)
                         .on_click(cx.listener(|view, _, _, cx| view.close_stacked_pr(cx))),
@@ -134,11 +134,11 @@ pub(super) fn error_body(error: &str, t: &Theme, cx: &mut Context<RepoWindow>) -
 
 pub(super) fn centered_message(message: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
-        .h(px(80.))
+        .h(ui_size(80.))
         .flex()
         .items_center()
         .justify_center()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(message.into())
         .into_any_element()

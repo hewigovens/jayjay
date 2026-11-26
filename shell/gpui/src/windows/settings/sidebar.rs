@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::{SettingsSection, SettingsView};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 use crate::ui::resizable_pane::ResizablePane;
 
@@ -28,8 +28,8 @@ pub(super) fn sidebar(
         .h_full()
         .overflow_y_scroll()
         .bg(rgb(t.row_alt_bg))
-        .px(px(8.))
-        .py(px(12.))
+        .px(ui_size(8.))
+        .py(ui_size(12.))
         .children(SettingsSection::ALL.into_iter().map(|section| {
             div()
                 .id(SharedString::from(format!("settings-nav-{section:?}")))
@@ -37,16 +37,16 @@ pub(super) fn sidebar(
                 .flex()
                 .flex_none()
                 .items_center()
-                .gap(px(8.))
-                .px(px(8.))
-                .py(px(8.))
-                .rounded(px(6.))
+                .gap(ui_size(8.))
+                .px(ui_size(8.))
+                .py(ui_size(8.))
+                .rounded(ui_size(6.))
                 .bg(rgb(if section == active {
                     t.selected_bg
                 } else {
                     t.row_alt_bg
                 }))
-                .text_size(ui_font_size(13.))
+                .text_size(ui_size(13.))
                 .text_color(rgb(t.fg))
                 .cursor_pointer()
                 .hover(|s| {
@@ -65,8 +65,8 @@ pub(super) fn sidebar(
                         .flex_none()
                         .items_center()
                         .justify_center()
-                        .size(px(20.))
-                        .rounded(px(5.))
+                        .size(ui_size(20.))
+                        .rounded(ui_size(5.))
                         .bg(rgb(section.color(t)))
                         .child(icons::icon(section.glyph(), 12., t.detail_bg)),
                 )

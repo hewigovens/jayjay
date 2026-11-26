@@ -6,7 +6,7 @@ use jayjay_core::MergeHunkSource;
 use jayjay_core::external_tools::conflict_marker_count;
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::merge_editor::{merge_base_toggle, merge_source_panel, merge_source_row};
 use crate::ui::overlay::overlay_layer;
@@ -64,8 +64,8 @@ pub(crate) fn conflict_editor_overlay(
         .flex_col()
         .w_full()
         .h_full()
-        .max_w(px(1180.))
-        .max_h(px(820.))
+        .max_w(ui_size(1180.))
+        .max_h(ui_size(820.))
         .min_w_0()
         .min_h_0()
         .overflow_hidden()
@@ -78,9 +78,9 @@ pub(crate) fn conflict_editor_overlay(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(10.))
+                .gap(ui_size(10.))
                 .h(px(t.scaled_control_height(52., 14.)))
-                .px(px(14.))
+                .px(ui_size(14.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
                 .border_color(rgb(t.border))
@@ -93,7 +93,7 @@ pub(crate) fn conflict_editor_overlay(
                         .child(
                             div()
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_size(ui_font_size(14.))
+                                .text_size(ui_size(14.))
                                 .child(jayjay_i18n::repo::resolve_conflict()),
                         )
                         .child(
@@ -107,7 +107,7 @@ pub(crate) fn conflict_editor_overlay(
                 .child(div().flex_1())
                 .child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(if unresolved == 0 {
                             t.success_fg
                         } else {
@@ -134,7 +134,10 @@ pub(crate) fn conflict_editor_overlay(
         )
         .child(conflict_result_section(view, data, &result_text, t, cx));
 
-    overlay_layer().p(px(16.)).child(panel).into_any_element()
+    overlay_layer()
+        .p(ui_size(16.))
+        .child(panel)
+        .into_any_element()
 }
 
 fn sources_section(
@@ -203,19 +206,19 @@ fn sources_section(
             div()
                 .flex()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .h(px(t.scaled_control_height(36., 12.)))
-                .px(px(12.))
+                .px(ui_size(12.))
                 .bg(rgb(t.header_bg))
                 .child(
                     div()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(jayjay_i18n::repo::sources()),
                 )
                 .child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(jayjay_i18n::repo::use_a_complete_side_as_the()),
                 )

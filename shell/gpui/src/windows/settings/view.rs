@@ -15,7 +15,7 @@ use super::dropdown::{OpenDropdown, dropdown_overlay};
 
 use super::font_catalog_state::FontCatalogState;
 use crate::app::config::{AppConfigStore, current as current_cfg};
-use crate::app::theme::{Theme, observe_window_appearance};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::resizable_pane::ResizablePane;
 use crate::ui::resize_handle::resize_handle;
@@ -258,8 +258,8 @@ impl Render for SettingsView {
                             .flex_none()
                             .items_center()
                             .min_h(px(t.scaled_control_height(44., 14.)))
-                            .px(px(20.))
-                            .text_size(crate::app::theme::ui_font_size(14.))
+                            .px(ui_size(20.))
+                            .text_size(ui_size(14.))
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(active.label()),
                     )
@@ -269,9 +269,9 @@ impl Render for SettingsView {
                             .min_h_0()
                             .flex()
                             .flex_col()
-                            .px(px(20.))
-                            .pt(px(8.))
-                            .pb(px(16.))
+                            .px(ui_size(20.))
+                            .pt(ui_size(8.))
+                            .pb(ui_size(16.))
                             .child(self.section_body(&cfg, &t, window, cx))
                             .into_any_element()
                     } else {
@@ -287,9 +287,9 @@ impl Render for SettingsView {
                             .child(
                                 div()
                                     .w_full()
-                                    .px(px(20.))
-                                    .pt(px(8.))
-                                    .pb(px(24.))
+                                    .px(ui_size(20.))
+                                    .pt(ui_size(8.))
+                                    .pb(ui_size(24.))
                                     .child(self.section_body(&cfg, &t, window, cx)),
                             )
                             .into_any_element()

@@ -1,10 +1,11 @@
 use gpui::{
     AnyElement, App, AppContext, Context, Entity, Focusable, InteractiveElement, IntoElement,
-    ParentElement, Styled, div, px,
+    ParentElement, Styled, div,
 };
 use jayjay_core::commit_message;
 
 use super::text_area::TextArea;
+use crate::app::theme::ui_size;
 
 pub(crate) struct CommitMessageEditor {
     original: String,
@@ -74,7 +75,7 @@ impl CommitMessageEditor {
             })
             .flex()
             .flex_col()
-            .gap(px(8.))
+            .gap(ui_size(8.))
             .child(self.summary.clone())
             .child(self.body.clone())
             .into_any_element()

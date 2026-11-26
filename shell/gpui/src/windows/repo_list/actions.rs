@@ -2,10 +2,10 @@ use std::path::Path;
 
 use gpui::{
     AnyElement, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::app::{config, repositories};
 use crate::ui::icons;
 
@@ -53,8 +53,8 @@ fn row_action(id: SharedString, glyph: &'static str, t: &Theme) -> gpui::Statefu
         .flex()
         .items_center()
         .justify_center()
-        .w(px(24.))
-        .h(px(24.))
+        .w(ui_size(24.))
+        .h(ui_size(24.))
         .rounded_full()
         .cursor_pointer()
         .hover(|style| style.bg(rgb(t.selected_bg)))

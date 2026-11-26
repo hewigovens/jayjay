@@ -1,9 +1,9 @@
 use gpui::{
-    Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful, Styled, div, px,
-    rgb, svg,
+    Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful, Styled, div, rgb,
+    svg,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -27,8 +27,8 @@ pub(crate) fn check_circle(
         .flex()
         .items_center()
         .justify_center()
-        .w(px(14.))
-        .h(px(14.))
+        .w(ui_size(14.))
+        .h(ui_size(14.))
         .rounded_full()
         .border_1()
         .border_color(rgb(if state == CheckCircleState::Off {
@@ -40,9 +40,13 @@ pub(crate) fn check_circle(
     match state {
         CheckCircleState::Off => {}
         CheckCircleState::Partial => {
-            circle = circle
-                .bg(rgb(accent))
-                .child(div().w(px(6.)).h(px(2.)).rounded_full().bg(rgb(0xffffff)));
+            circle = circle.bg(rgb(accent)).child(
+                div()
+                    .w(ui_size(6.))
+                    .h(ui_size(2.))
+                    .rounded_full()
+                    .bg(rgb(0xffffff)),
+            );
         }
         CheckCircleState::On => {
             circle = circle
@@ -76,9 +80,9 @@ pub(crate) fn check_square(
         .flex()
         .items_center()
         .justify_center()
-        .w(px(14.))
-        .h(px(14.))
-        .rounded(px(3.))
+        .w(ui_size(14.))
+        .h(ui_size(14.))
+        .rounded(ui_size(3.))
         .border_1()
         .border_color(rgb(if state == CheckSquareState::Off {
             t.fg_faint
@@ -89,24 +93,32 @@ pub(crate) fn check_square(
     match state {
         CheckSquareState::Off => square,
         CheckSquareState::Dash => square.child(mark_svg(icons::MINUS_SVG, accent)),
-        CheckSquareState::Dot => {
-            square.child(div().w(px(4.)).h(px(4.)).rounded_full().bg(rgb(accent)))
-        }
+        CheckSquareState::Dot => square.child(
+            div()
+                .w(ui_size(4.))
+                .h(ui_size(4.))
+                .rounded_full()
+                .bg(rgb(accent)),
+        ),
         CheckSquareState::On => square.child(mark_svg(icons::CHECK_SVG, accent)),
     }
 }
 
 // An SVG mark centers geometrically; an icon-font glyph sits visibly off-center in a 14px box.
 fn mark_svg(path: &'static str, color: u32) -> gpui::Svg {
-    svg().path(path).w(px(8.)).h(px(8.)).text_color(rgb(color))
+    svg()
+        .path(path)
+        .w(ui_size(8.))
+        .h(ui_size(8.))
+        .text_color(rgb(color))
 }
 
 pub(crate) fn checkbox_glyph(checked: bool, theme: &Theme) -> Div {
     let glyph = div()
         .flex_none()
-        .w(px(14.))
-        .h(px(14.))
-        .rounded(px(3.))
+        .w(ui_size(14.))
+        .h(ui_size(14.))
+        .rounded(ui_size(3.))
         .border_1()
         .border_color(rgb(theme.border))
         .flex()
@@ -137,12 +149,12 @@ pub(crate) fn checkbox_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .cursor_pointer()
         .child(checkbox_glyph(checked, theme))
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(theme.fg))
                 .child(label.into()),
         )

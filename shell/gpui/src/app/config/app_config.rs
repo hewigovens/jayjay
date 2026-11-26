@@ -81,7 +81,7 @@ impl AppConfig {
         self.debug_mode
             .unwrap_or_else(jayjay_core::is_prerelease_build)
     }
-    pub(crate) const MIN_FONT_SIZE: f32 = 9.;
+    pub(crate) const MIN_FONT_SIZE: f32 = 8.;
     pub(crate) const MAX_FONT_SIZE: f32 = 24.;
     pub(crate) const DEFAULT_FONT_SIZE: f32 = 12.;
     pub(crate) const MIN_LINE_SPACING: f32 = 1.;

@@ -1,5 +1,5 @@
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::ui::primitives::button;
 use crate::ui::text_area::{Newline, TextArea};
 use gpui::prelude::FluentBuilder;
@@ -214,17 +214,17 @@ impl Render for OpenRemoteRepositoryView {
             .flex()
             .flex_col()
             .size_full()
-            .gap(px(12.))
-            .p(px(24.))
+            .gap(ui_size(12.))
+            .p(ui_size(24.))
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .text_size(ui_font_size(12.))
+            .text_size(ui_size(12.))
             .child(jayjay_i18n::ssh::machine())
             .child(
                 div()
                     .flex()
                     .items_center()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(div().flex_1().child(self.machine.clone()))
                     .when(!connected, |row| {
                         row.child(
@@ -234,7 +234,7 @@ impl Render for OpenRemoteRepositoryView {
                     }),
             )
             .when(!connected, |root| {
-                root.child(div().flex().flex_wrap().gap(px(6.)).children(
+                root.child(div().flex().flex_wrap().gap(ui_size(6.)).children(
                     suggestions.into_iter().map(|host| {
                         button(format!("ssh-host-{host}"), host.clone(), &t, false).on_click(
                             cx.listener(move |view, _, _, cx| {
@@ -258,8 +258,8 @@ impl Render for OpenRemoteRepositoryView {
                                 .id("ssh-folders")
                                 .flex()
                                 .flex_col()
-                                .gap(px(4.))
-                                .h(px(165.))
+                                .gap(ui_size(4.))
+                                .h(ui_size(165.))
                                 .overflow_y_scroll()
                                 .when_some(directory.parent, |root, parent| {
                                     root.child(
@@ -299,7 +299,7 @@ impl Render for OpenRemoteRepositoryView {
                 div()
                     .flex()
                     .justify_end()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         button(
                             "open-remote-repository-cancel",

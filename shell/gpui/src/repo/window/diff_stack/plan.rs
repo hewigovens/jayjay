@@ -370,7 +370,7 @@ impl RepoWindow {
             sbs_old_bounds: &self.diff.sbs_old_bounds,
             sbs_new_bounds: &self.diff.sbs_new_bounds,
         };
-        let banner_height = rows.banner_height();
+        let banner_height = rows.banner_height(theme(cx));
         let body_height = banner_height + rows.rows_height(theme(cx), cx);
         StackBlock {
             hunk_ix,

@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::selection_bg;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::input::{LineEdit, LineInput};
 
 pub fn line_input_content(
@@ -107,7 +107,7 @@ fn caret_slot(visible: bool, theme: &Theme, id: Option<&'static str>, reserve_wi
         .flex_none()
         .items_center()
         .w(px(1.))
-        .h(px(16.));
+        .h(ui_size(16.));
     if !reserve_width {
         slot = slot.mr(-px(1.));
     }
@@ -117,7 +117,7 @@ fn caret_slot(visible: bool, theme: &Theme, id: Option<&'static str>, reserve_wi
             .left(px(0.))
             .top(px(0.))
             .w(px(1.))
-            .h(px(16.))
+            .h(ui_size(16.))
             .bg(rgb(theme.fg));
         slot = match id {
             Some(id) => slot.child(caret.id(id).debug_selector(move || id.to_owned())),

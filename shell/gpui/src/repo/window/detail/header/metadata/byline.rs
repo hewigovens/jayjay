@@ -9,7 +9,7 @@ use super::cells::{
     bookmark_chip, byline_authors, byline_avatars_width, diff_stats, separator, tag_chip,
 };
 use crate::app::fonts;
-use crate::app::theme::{FONT_ID, Theme, ui_font_size};
+use crate::app::theme::{FONT_ID, Theme, ui_size};
 use crate::diff::DETAIL_INSET;
 use crate::diff::file_row_height;
 use crate::repo::RepoWindow;
@@ -30,7 +30,7 @@ pub(super) fn byline(
         focused,
         ..
     } = *state;
-    let budget = state.detail_width - 2. * DETAIL_INSET;
+    let budget = state.detail_width - 2. * t.scaled_font_size(DETAIL_INSET);
     let width = |shows_date, shows_commit, compact| {
         byline_width(change, stats, bookmarks, shows_date, shows_commit, t, cx)
             + diff_actions.width(compact, t, cx)
@@ -47,9 +47,9 @@ pub(super) fn byline(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .h(px(file_row_height(t)))
-        .px(px(DETAIL_INSET))
+        .px(px(t.scaled_font_size(DETAIL_INSET)))
         .border_b_1()
         .border_color(rgb(t.border))
         .min_w_0()
@@ -102,7 +102,7 @@ pub(super) fn byline(
             div()
                 .debug_selector(|| "detail-byline-date".to_owned())
                 .flex_none()
-                .text_size(ui_font_size(FONT_ID))
+                .text_size(ui_size(FONT_ID))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(format_when(
                     change.author.timestamp_millis,
@@ -110,7 +110,7 @@ pub(super) fn byline(
         );
     }
     row = row
-        .child(div().flex_1().min_w(px(8.)))
+        .child(div().flex_1().min_w(ui_size(8.)))
         .children(diff_actions.render(!labelled, focused, t, cx));
     if let Some(stats) = stats.and_then(|stats| diff_stats(stats, false, t)) {
         row = row.child(stats);
@@ -148,16 +148,17 @@ fn byline_width(
     let ui_text = |s: &str| f32::from(fonts::ui_text_width(cx, s, px(meta)));
 
     let mut children = 5usize;
-    let mut width = byline_avatars_width(change)
-        + 5.
+    let mut width = byline_avatars_width(change, t)
+        + t.scaled_font_size(5.)
         + ui_text(&change.credit_line())
         + ui_text("·")
         + compact_id_len(change.change_id.short_len) as f32 * mono_char
-        + 20.
-        + 8.;
+        + t.scaled_font_size(20.)
+        + t.scaled_font_size(8.);
     if shows_commit {
         children += 2;
-        width += compact_id_len(change.commit_id.short_len) as f32 * mono_char + 20.;
+        width +=
+            compact_id_len(change.commit_id.short_len) as f32 * mono_char + t.scaled_font_size(20.);
     }
     if shows_date {
         children += 2;
@@ -176,20 +177,20 @@ fn byline_width(
             stats_width += number(stats.deletions);
         }
         if stats.insertions > 0 && stats.deletions > 0 {
-            stats_width += 4.;
+            stats_width += t.scaled_font_size(4.);
         }
         width += stats_width;
     }
     for name in &change.bookmarks {
         children += 1;
-        width += ui_text(name) + 12.;
+        width += ui_text(name) + t.scaled_font_size(12.);
         if BookmarkInfo::is_conflicted_name(bookmarks, name) {
-            width += meta + 3.;
+            width += meta + t.scaled_font_size(3.);
         }
     }
     for name in &change.tags {
         children += 1;
-        width += ui_text(name) + 12. + meta + 3.;
+        width += ui_text(name) + t.scaled_font_size(12.) + meta + t.scaled_font_size(3.);
     }
-    width + 6. * (children - 1) as f32
+    width + t.scaled_font_size(6.) * (children - 1) as f32
 }

@@ -1,9 +1,9 @@
 use crate::app::links::{REPOSITORY_URL, SPONSOR_URL};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_i18n::settings;
 
@@ -17,24 +17,24 @@ pub(super) fn about_section(icon: gpui::AnyElement, t: &Theme) -> impl IntoEleme
         .flex()
         .flex_col()
         .items_center()
-        .gap(px(12.))
-        .pt(px(8.))
+        .gap(ui_size(12.))
+        .pt(ui_size(8.))
         .child(icon)
         .child(
             div()
-                .text_size(ui_font_size(20.))
+                .text_size(ui_size(20.))
                 .text_color(rgb(t.fg))
                 .child(APP_NAME),
         )
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(settings::tagline()),
         )
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(version)),
         )
@@ -42,8 +42,8 @@ pub(super) fn about_section(icon: gpui::AnyElement, t: &Theme) -> impl IntoEleme
             div()
                 .flex()
                 .flex_row()
-                .gap(px(8.))
-                .pt(px(8.))
+                .gap(ui_size(8.))
+                .pt(ui_size(8.))
                 .child(link_button(
                     "tb-sponsor",
                     glyph::HEART,
@@ -73,12 +73,12 @@ fn link_button(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
-        .px(px(14.))
-        .py(px(6.))
+        .gap(ui_size(6.))
+        .px(ui_size(14.))
+        .py(ui_size(6.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.toggle_inactive_fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))

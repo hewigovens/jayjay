@@ -6,7 +6,7 @@ use gpui::{
 use jayjay_core::DiffProjection;
 
 use super::super::DiffViewMode;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::projection;
 use crate::repo::window::ref_chips::copy_feedback_button;
 use crate::repo::window::{RepoWindow, focus_ring};
@@ -60,7 +60,10 @@ pub(crate) fn file_collapse_buttons(
     cx: &mut Context<RepoWindow>,
 ) -> [AnyElement; 2] {
     let button = |id: &'static str, path: &'static str, label: String| {
-        let icon = svg().path(path).size(px(12.)).text_color(rgb(t.fg_dim));
+        let icon = svg()
+            .path(path)
+            .size(ui_size(12.))
+            .text_color(rgb(t.fg_dim));
         header_action_with(id, icon, (!compact).then(|| label.clone()), false, t).help(label)
     };
     [
@@ -262,12 +265,12 @@ pub(super) fn exit_annotate_button(t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(4.))
-        .px(px(8.))
-        .py(px(3.))
+        .gap(ui_size(4.))
+        .px(ui_size(8.))
+        .py(ui_size(3.))
         .rounded_md()
         .bg(rgb(t.toggle_active_bg))
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.toggle_active_fg))
         .cursor_pointer()
         .on_click(cx.listener(|view, _event: &ClickEvent, _w, cx| {
@@ -343,11 +346,11 @@ fn header_action_with(
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(4.))
-        .px(px(6.))
+        .gap(ui_size(4.))
+        .px(ui_size(6.))
         .h(px(t.scaled_control_height(22., 11.)))
         .rounded_md()
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)).text_color(rgb(t.fg)))

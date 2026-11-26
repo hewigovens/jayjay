@@ -1,10 +1,11 @@
 //! The circular avatar element and its fallback monogram.
 
-use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, px, rgb};
+use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, rgb};
 
 use jayjay_core::{CommitAuthor, avatar};
 
 use super::cache::cache_path;
+use crate::app::theme::ui_size;
 
 /// Circular avatar: the cached image if present, else a colored monogram (never hits the network).
 pub fn element(author: &CommitAuthor, size: f32) -> AnyElement {
@@ -12,8 +13,8 @@ pub fn element(author: &CommitAuthor, size: f32) -> AnyElement {
         && path.exists()
     {
         return img(path)
-            .w(px(size))
-            .h(px(size))
+            .w(ui_size(size))
+            .h(ui_size(size))
             .rounded_full()
             .into_any_element();
     }
@@ -22,11 +23,11 @@ pub fn element(author: &CommitAuthor, size: f32) -> AnyElement {
         .flex_none()
         .items_center()
         .justify_center()
-        .w(px(size))
-        .h(px(size))
+        .w(ui_size(size))
+        .h(ui_size(size))
         .rounded_full()
         .bg(rgb(avatar::monogram_color(&author.email)))
-        .text_size(px(size * 0.55))
+        .text_size(ui_size(size * 0.55))
         .text_color(rgb(0xffffff))
         .child(SharedString::from(author.monogram_initial().to_string()))
         .into_any_element()

@@ -1,7 +1,7 @@
 use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, StackedPrState};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::input::line_input_content;
 use gpui::{
@@ -20,8 +20,8 @@ pub(super) fn layer_list(
         .id("stacked-pr-layers")
         .flex()
         .flex_col()
-        .gap(px(6.))
-        .max_h(px(280.))
+        .gap(ui_size(6.))
+        .max_h(ui_size(280.))
         .overflow_y_scroll();
     // Top of the stack first (core layers are bottom→top), matching the SwiftUI panel.
     for (index, layer) in stack.layers.iter().enumerate().rev() {
@@ -46,7 +46,7 @@ fn layer_card(
     let mut base_row = div()
         .flex()
         .items_center()
-        .gap(px(5.))
+        .gap(ui_size(5.))
         .code_text(10., t)
         .text_color(rgb(t.fg_faint))
         .child(icon(glyph::ARROW_RIGHT, 8., t.fg_faint))
@@ -54,21 +54,21 @@ fn layer_card(
     if !layer.bookmark_existed {
         base_row = base_row.child(
             div()
-                .px(px(4.))
+                .px(ui_size(4.))
                 .rounded_full()
                 .bg(rgba(with_alpha(t.file_added_color, 0x2e)))
-                .text_size(ui_font_size(9.))
+                .text_size(ui_size(9.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.file_added_color))
                 .child(jayjay_i18n::repo::new_badge()),
         );
     }
-    let mut column = div().flex().flex_col().flex_1().min_w_0().gap(px(4.));
+    let mut column = div().flex().flex_col().flex_1().min_w_0().gap(ui_size(4.));
     if !layer.title.is_empty() {
         column = column.child(
             div()
                 .truncate()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(SharedString::from(layer.title.clone())),
         );
@@ -81,9 +81,9 @@ fn layer_card(
         .debug_selector(move || format!("stacked-pr-layer-{index}"))
         .flex()
         .items_start()
-        .gap(px(10.))
-        .px(px(10.))
-        .py(px(7.))
+        .gap(ui_size(10.))
+        .px(ui_size(10.))
+        .py(ui_size(7.))
         .rounded_lg()
         .bg(rgba(with_alpha(t.fg, if t.is_dark { 0x10 } else { 0x0a })))
         .child(icon(glyph::GIT_BRANCH, 11., t.fg_faint))
@@ -107,13 +107,13 @@ fn bookmark_field(
             .child(icon(glyph::WARNING, 10., t.tag_divergent_fg))
             .child(
                 div()
-                    .text_size(ui_font_size(10.))
+                    .text_size(ui_size(10.))
                     .text_color(rgb(t.tag_divergent_fg))
                     .child(message),
             )
             .flex()
             .items_center()
-            .gap(px(4.))
+            .gap(ui_size(4.))
     });
     if editing {
         let input = line_input_content(
@@ -125,7 +125,7 @@ fn bookmark_field(
         return div()
             .flex()
             .items_center()
-            .gap(px(5.))
+            .gap(ui_size(5.))
             .child(
                 div()
                     .id(("stacked-pr-input", index))
@@ -137,7 +137,7 @@ fn bookmark_field(
                     .items_center()
                     .overflow_hidden()
                     .whitespace_nowrap()
-                    .px(px(7.))
+                    .px(ui_size(7.))
                     .rounded_sm()
                     .border_1()
                     .border_color(rgb(if warning.is_some() {
@@ -166,7 +166,7 @@ fn bookmark_field(
         .debug_selector(move || format!("stacked-pr-input-{index}"))
         .flex()
         .items_center()
-        .gap(px(5.))
+        .gap(ui_size(5.))
         .code_text(11., t)
         .text_color(rgb(t.fg_dim))
         .child(

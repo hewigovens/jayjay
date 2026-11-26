@@ -1,7 +1,7 @@
 use crate::app::config::{AppConfig, AppearanceMode};
 use gpui::{
     AnyElement, ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_i18n::settings;
 
@@ -10,7 +10,7 @@ use super::dropdown::dropdown_button;
 use super::shared::{ROW_FONT_SIZE, field_row, form_group};
 use super::theme_section::theme_section;
 use crate::app::config;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 
 pub(super) fn appearance_section(
@@ -23,7 +23,7 @@ pub(super) fn appearance_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .child(form_group(
             [field_row(
                 glyph::CONTRAST,
@@ -59,8 +59,8 @@ fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_row()
-        .gap(px(1.))
-        .p(px(2.))
+        .gap(ui_size(1.))
+        .p(ui_size(2.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
         .child(appearance_option(
@@ -102,11 +102,11 @@ fn appearance_option(
     };
     div()
         .id(SharedString::from(id))
-        .px(px(10.))
-        .py(px(3.))
+        .px(ui_size(10.))
+        .py(ui_size(3.))
         .rounded_md()
         .bg(rgb(bg))
-        .text_size(ui_font_size(ROW_FONT_SIZE))
+        .text_size(ui_size(ROW_FONT_SIZE))
         .text_color(rgb(fg))
         .cursor_pointer()
         .on_click(move |_ev: &ClickEvent, _w, cx| {

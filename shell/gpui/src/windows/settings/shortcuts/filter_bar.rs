@@ -1,10 +1,8 @@
 use super::view::ShortcutSettings;
 use crate::app::config;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
-use gpui::{
-    Context, Div, InteractiveElement, ParentElement, Stateful, Styled, Window, div, px, rgb,
-};
+use gpui::{Context, Div, InteractiveElement, ParentElement, Stateful, Styled, Window, div, rgb};
 use jayjay_i18n::shortcuts;
 use std::rc::Rc;
 
@@ -15,7 +13,7 @@ impl ShortcutSettings {
         div()
             .flex()
             .items_center()
-            .gap(px(10.))
+            .gap(ui_size(10.))
             .child(
                 div()
                     .id("shortcuts-query")
@@ -27,7 +25,7 @@ impl ShortcutSettings {
                     .child(
                         div()
                             .absolute()
-                            .left(px(9.))
+                            .left(ui_size(9.))
                             .top_0()
                             .bottom_0()
                             .flex()
@@ -39,8 +37,8 @@ impl ShortcutSettings {
                 div()
                     .flex()
                     .flex_none()
-                    .gap(px(1.))
-                    .p(px(2.))
+                    .gap(ui_size(1.))
+                    .p(ui_size(2.))
                     .rounded_md()
                     .bg(rgb(t.toggle_inactive_bg))
                     .child(self.segment("shortcuts-all", shortcuts::all(), false, t, cx))
@@ -73,8 +71,8 @@ impl ShortcutSettings {
                 },
             ),
         )
-        .w(px(SEGMENT_WIDTH))
-        .py(px(3.))
+        .w(ui_size(SEGMENT_WIDTH))
+        .py(ui_size(3.))
         .flex()
         .justify_center()
         .rounded_md()

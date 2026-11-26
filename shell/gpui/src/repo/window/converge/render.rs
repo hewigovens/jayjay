@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, Div, Entity, FocusHandle, FontWeight, InteractiveElement, IntoElement,
-    ParentElement, SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px,
+    ParentElement, SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div,
     relative, rgb,
 };
 use jayjay_core::converge::ConvergeReview;
@@ -12,7 +12,7 @@ use super::body::ConvergeBody;
 use super::contents::Loaded;
 use super::sheet::{ConvergePhase, ConvergeSheet};
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{RepoModal, RepoWindow};
 use crate::ui::icons::glyph;
@@ -63,8 +63,8 @@ pub(crate) fn converge_overlay(
         .flex_col()
         .flex_1()
         .min_h_0()
-        .gap(px(14.))
-        .pr(px(4.))
+        .gap(ui_size(14.))
+        .pr(ui_size(4.))
         .overflow_y_scroll()
         .track_scroll(&sheet.scroll)
         .child(notices(sheet, t, cx))
@@ -89,8 +89,8 @@ fn notices(sheet: &ConvergeSheet, t: &Theme, cx: &mut Context<RepoWindow>) -> An
     let notices = div()
         .flex()
         .flex_col()
-        .gap(px(6.))
-        .text_size(ui_font_size(12.))
+        .gap(ui_size(6.))
+        .text_size(ui_size(12.))
         .when(sheet.was_stale, |notices| {
             notices.child(
                 icon_label(glyph::SYNC, jayjay_i18n::converge::stale(), 12., t.fg_dim)
@@ -100,7 +100,7 @@ fn notices(sheet: &ConvergeSheet, t: &Theme, cx: &mut Context<RepoWindow>) -> An
         });
     match &sheet.phase {
         ConvergePhase::Loading => {
-            notices.child(caption(jayjay_i18n::converge::loading(), t).text_size(ui_font_size(12.)))
+            notices.child(caption(jayjay_i18n::converge::loading(), t).text_size(ui_size(12.)))
         }
         ConvergePhase::Failed(error) => notices
             .child(error_text(error.clone(), t).debug_selector(|| "converge-error".to_owned()))
@@ -149,13 +149,13 @@ fn footer(sheet: &ConvergeSheet, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
     div()
         .flex()
         .items_center()
-        .gap(px(12.))
-        .pt(px(10.))
+        .gap(ui_size(12.))
+        .pt(ui_size(10.))
         .border_t_1()
         .border_color(rgb(t.border))
         .children(hint.map(|hint| {
             icon_label(glyph::INFO, hint, 11., t.fg_dim)
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
         }))
         .child(div().flex_1())
@@ -165,7 +165,7 @@ fn footer(sheet: &ConvergeSheet, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
 
 pub(super) fn heading(text: String) -> Div {
     div()
-        .text_size(ui_font_size(13.))
+        .text_size(ui_size(13.))
         .font_weight(FontWeight::SEMIBOLD)
         .child(text)
 }
@@ -183,14 +183,14 @@ pub(super) fn card_frame(t: &Theme) -> Div {
 
 pub(super) fn caption(text: impl Into<SharedString>, t: &Theme) -> Div {
     div()
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(text.into())
 }
 
 pub(super) fn error_text(error: SharedString, t: &Theme) -> Div {
     div()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.error_fg))
         .whitespace_normal()
         .child(error)
@@ -203,9 +203,11 @@ pub(super) fn loaded<T>(
 ) -> AnyElement {
     match slot {
         None => caption(jayjay_i18n::converge::loading(), t)
-            .p(px(10.))
+            .p(ui_size(10.))
             .into_any_element(),
-        Some(Err(error)) => error_text(error.clone(), t).p(px(10.)).into_any_element(),
+        Some(Err(error)) => error_text(error.clone(), t)
+            .p(ui_size(10.))
+            .into_any_element(),
         Some(Ok(value)) => content(value),
     }
 }
@@ -226,8 +228,8 @@ pub(super) fn link(
         .debug_selector(move || selector.clone())
         .flex()
         .items_center()
-        .gap(px(4.))
-        .text_size(ui_font_size(11.))
+        .gap(ui_size(4.))
+        .text_size(ui_size(11.))
         .font_weight(FontWeight::MEDIUM)
         .text_color(rgb(t.selected_accent))
         .child(label.into());

@@ -1,7 +1,7 @@
 use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, div, px};
 
 use crate::app::fonts;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::{
     DiffViewMode, edit_diff_button, file_collapse_buttons, mode_label, view_mode_button,
 };
@@ -37,7 +37,7 @@ impl DiffActions {
             .flex_none()
             .flex_row()
             .items_center()
-            .gap(px(2.));
+            .gap(ui_size(2.));
         if self.shows_stack {
             actions = actions.children(file_collapse_buttons(compact, t, cx));
         }
@@ -67,13 +67,14 @@ impl DiffActions {
             let label = if compact {
                 0.
             } else {
-                4. + f32::from(fonts::ui_text_width(
-                    cx,
-                    &label,
-                    px(t.scaled_font_size(11.)),
-                ))
+                t.scaled_font_size(4.)
+                    + f32::from(fonts::ui_text_width(
+                        cx,
+                        &label,
+                        px(t.scaled_font_size(11.)),
+                    ))
             };
-            12. + 12. + label
+            t.scaled_font_size(12. + 12.) + label
         };
         let widths: Vec<f32> = self
             .shows_stack
@@ -84,6 +85,6 @@ impl DiffActions {
             .chain(self.can_edit_diff.then(jayjay_i18n::diff::edit_diff))
             .map(action)
             .collect();
-        widths.iter().sum::<f32>() + 2. * widths.len().saturating_sub(1) as f32
+        widths.iter().sum::<f32>() + t.scaled_font_size(2.) * widths.len().saturating_sub(1) as f32
     }
 }

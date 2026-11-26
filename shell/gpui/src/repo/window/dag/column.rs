@@ -16,9 +16,9 @@ const OVERFLOW_DASH_PATTERN: &[f32] = &[10.0, 4.0, 10.0, 12.0];
 const INDIRECT_EDGE_DASH_PATTERN: &[f32] = &[3.0, 3.0];
 const MISSING_EDGE_DASH_PATTERN: &[f32] = &[2.0, 2.0];
 
-pub(crate) fn lane_column_width(display_lane_count: usize) -> f32 {
+pub(crate) fn lane_column_width(display_lane_count: usize, theme: &Theme) -> f32 {
     let lanes = display_lane_count.max(1);
-    lanes as f32 * LANE_WIDTH + LEADING_PAD + TRAILING_PAD
+    theme.scaled_font_size(lanes as f32 * LANE_WIDTH + LEADING_PAD + TRAILING_PAD)
 }
 
 pub(crate) struct DagRowLanes {
@@ -47,7 +47,9 @@ pub(crate) fn dag_column(
         has_missing_ancestry,
     } = lanes;
     let display_lane_count = layout.display_lane_count();
-    let total_w = lane_column_width(display_lane_count);
+    let total_w = lane_column_width(display_lane_count, theme);
+    let lane_width = theme.scaled_font_size(LANE_WIDTH);
+    let leading_pad = theme.scaled_font_size(LEADING_PAD);
     let overflow_display_lane = display_lane_count.max(1) - 1;
     let style = DagNodeStyle::resolve(&entry.change, theme);
     let row_display_lane = layout.display_lane(row_lane);
@@ -128,7 +130,7 @@ pub(crate) fn dag_column(
             let oy = bounds.origin.y;
             let ox = bounds.origin.x;
             let display_lane_center_x = |display_lane: usize| -> Pixels {
-                ox + px(LEADING_PAD + display_lane as f32 * LANE_WIDTH + LANE_WIDTH / 2.0)
+                ox + px(leading_pad + display_lane as f32 * lane_width + lane_width / 2.0)
             };
 
             let my_x = display_lane_center_x(row_display_lane);
@@ -202,7 +204,7 @@ pub(crate) fn dag_column(
                     let has_visible_parent = !edge_targets.is_empty();
                     let terminal_x = my_x
                         + px(if has_visible_parent {
-                            LANE_WIDTH * 0.35
+                            lane_width * 0.35
                         } else {
                             0.0
                         });

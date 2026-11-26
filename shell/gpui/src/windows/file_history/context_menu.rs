@@ -6,7 +6,7 @@ use jayjay_core::ChangeInfo;
 
 use super::FileHistoryView;
 use super::comparison::FileHistoryEndpoint;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
 
@@ -81,8 +81,8 @@ fn menu_panel(menu: &FileHistoryMenu, theme: &Theme, view: &Entity<FileHistoryVi
     div()
         .flex()
         .flex_col()
-        .min_w(px(180.))
-        .py(px(4.))
+        .min_w(ui_size(180.))
+        .py(ui_size(4.))
         .bg(rgb(theme.detail_bg))
         .border_1()
         .border_color(rgb(theme.border))
@@ -130,10 +130,10 @@ fn menu_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(10.))
-        .py(px(5.))
-        .text_size(ui_font_size(12.))
+        .gap(ui_size(8.))
+        .px(ui_size(10.))
+        .py(ui_size(5.))
+        .text_size(ui_size(12.))
         .text_color(rgb(theme.fg))
         .cursor_pointer()
         .hover(|style| style.bg(rgb(theme.selected_bg)))

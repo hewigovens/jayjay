@@ -1,9 +1,9 @@
 use super::view::ShortcutSettings;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 use gpui::{
     Context, Div, InteractiveElement, ParentElement, Role, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    StatefulInteractiveElement, Styled, Window, div, rgb,
 };
 use std::rc::Rc;
 
@@ -18,9 +18,9 @@ impl ShortcutSettings {
         action: impl Fn(&mut Self, &mut Window, &mut Context<Self>) + 'static,
     ) -> Stateful<Div> {
         Self::control(id.into(), label.clone(), t, cx, Rc::new(action))
-            .px(px(8.))
-            .py(px(5.))
-            .text_size(ui_font_size(12.))
+            .px(ui_size(8.))
+            .py(ui_size(5.))
+            .text_size(ui_size(12.))
             .child(label)
     }
 
@@ -37,7 +37,7 @@ impl ShortcutSettings {
             .flex_none()
             .items_center()
             .justify_center()
-            .size(px(20.))
+            .size(ui_size(20.))
             .border_color(gpui::transparent_black())
             .child(icons::icon(glyph_str, 12., t.fg_dim))
     }

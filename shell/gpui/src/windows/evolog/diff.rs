@@ -10,7 +10,7 @@ use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 use super::EvologView;
 use super::layout::EvologPane;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::{hunk_is_image, image_diff_view, read_only_diff};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::loading::loading_status;
@@ -201,7 +201,7 @@ fn comparison_content(
                         .w_full()
                         .px_2()
                         .py_1()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(row_theme.fg))
                         .bg(rgb(if selected_file_ix == Some(ix) {
                             row_theme.selected_bg
@@ -270,16 +270,16 @@ fn comparison_header(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(14.))
-        .py(px(8.))
+        .gap(ui_size(8.))
+        .px(ui_size(14.))
+        .py(ui_size(8.))
         .bg(rgb(theme.compare_bg))
         .border_b_1()
         .border_color(rgb(theme.border))
         .child(comparison_direction_button(can_reverse, theme, cx))
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(theme.fg))
                 .child(jayjay_i18n::repo::comparing_versions()),
@@ -293,7 +293,7 @@ fn comparison_header(
         let label = jayjay_i18n::repo::files_changed_count(file_count);
         header = header.child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(theme.fg_dim))
                 .child(label),
         );
@@ -313,7 +313,7 @@ fn comparison_direction_button(
         .flex()
         .items_center()
         .justify_center()
-        .size(px(20.))
+        .size(ui_size(20.))
         .rounded_md()
         .child(icon(
             glyph::ARROWS_LEFT_RIGHT,
@@ -338,7 +338,7 @@ fn comparison_direction_button(
 
 fn version_label(commit_id: &str, theme: &Theme) -> AnyElement {
     div()
-        .max_w(px(180.))
+        .max_w(ui_size(180.))
         .overflow_hidden()
         .code_text(12., theme)
         .font_weight(gpui::FontWeight::SEMIBOLD)

@@ -1,10 +1,10 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    StatefulInteractiveElement, Styled, div, rgb, rgba,
 };
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::repo::window::{PrImportState, RepoModal, RepoWindow};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_header, overlay_layer};
@@ -35,7 +35,7 @@ pub(crate) fn pr_import_overlay(
     if let Some(error) = state.error.as_ref() {
         card = card.child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.error_fg))
                 .whitespace_normal()
                 .child(SharedString::from(error.clone())),
@@ -93,18 +93,18 @@ fn pr_import_preview(
     let mut body = div()
         .flex()
         .flex_col()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             div()
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .child(pr_state_badge(pr.state, t))
                 .child(
                     div()
                         .flex_none()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(format!("#{}", pr.number)),
                 )
@@ -113,7 +113,7 @@ fn pr_import_preview(
                         .flex_1()
                         .min_w_0()
                         .truncate()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .child(SharedString::from(pr.title.clone())),
                 ),
         )
@@ -121,7 +121,7 @@ fn pr_import_preview(
             div()
                 .flex()
                 .flex_col()
-                .gap(px(4.))
+                .gap(ui_size(4.))
                 .child(summary_row(
                     jayjay_i18n::menu::repository(),
                     format!("{} · {}", pr.host, pr.base_repo),
@@ -157,7 +157,7 @@ fn pr_import_preview(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(summary_row(
                     jayjay_i18n::repo::workspace(),
                     existing.name.clone(),
@@ -208,14 +208,14 @@ fn summary_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .w_full()
         .min_w_0()
         .child(
             div()
                 .flex_none()
-                .w(px(70.))
-                .text_size(ui_font_size(11.))
+                .w(ui_size(70.))
+                .text_size(ui_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg_dim))
                 .child(label.into()),
@@ -231,7 +231,7 @@ fn summary_row(
         row = row.child(
             div()
                 .flex_none()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .text_color(rgb(t.fg_faint))
                 .child(note),
         );
@@ -247,11 +247,11 @@ fn pr_state_badge(state: jayjay_core::PrState, t: &Theme) -> gpui::Div {
     };
     div()
         .flex_none()
-        .px(px(5.))
-        .py(px(1.))
+        .px(ui_size(5.))
+        .py(ui_size(1.))
         .rounded_full()
         .bg(rgba(with_alpha(color, if t.is_dark { 0x2a } else { 0x22 })))
-        .text_size(ui_font_size(9.))
+        .text_size(ui_size(9.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(color))
         .child(label)

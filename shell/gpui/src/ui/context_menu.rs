@@ -13,7 +13,7 @@ use gpui::{
 use jayjay_core::compare::{BookmarkDiffRequest, CompareState};
 
 use crate::app::fonts::ui_text_width;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, ConflictResolution, FileBatchAction,
     RepoWindow,
@@ -214,7 +214,8 @@ pub(crate) fn render_context_menu(
     cx: &App,
 ) -> AnyElement {
     let width = menu_width(&state.items, t, cx);
-    let origin = menu_origin(state.anchor, width, viewport_width);
+    let margin = px(t.scaled_font_size(MENU_EDGE_MARGIN));
+    let origin = menu_origin(state.anchor, width, viewport_width, margin);
     let backdrop_view = view.clone();
     let backdrop = div()
         .id("context-menu-backdrop")
@@ -241,7 +242,7 @@ pub(crate) fn render_context_menu(
     let menu = anchored()
         .anchor(Anchor::TopLeft)
         .position(origin)
-        .snap_to_window_with_margin(px(MENU_EDGE_MARGIN))
+        .snap_to_window_with_margin(margin)
         .child(menu_panel(
             &state.items,
             width,
@@ -262,8 +263,8 @@ pub(crate) fn render_context_menu(
         Some(
             anchored()
                 .anchor(Anchor::TopLeft)
-                .position(point(x, origin.y + submenu_offset(state, index)))
-                .snap_to_window_with_margin(px(MENU_EDGE_MARGIN))
+                .position(point(x, origin.y + submenu_offset(state, index, t)))
+                .snap_to_window_with_margin(margin)
                 .child(menu_panel(
                     items,
                     submenu_width,
@@ -289,25 +290,32 @@ pub(crate) fn render_context_menu(
 }
 
 /// Opens leftward from the pointer when the menu would cross the trailing edge, as native menus do.
-fn menu_origin(anchor: Point<Pixels>, width: Pixels, viewport_width: Pixels) -> Point<Pixels> {
-    if anchor.x + width + px(MENU_EDGE_MARGIN) > viewport_width
-        && anchor.x - width >= px(MENU_EDGE_MARGIN)
-    {
+fn menu_origin(
+    anchor: Point<Pixels>,
+    width: Pixels,
+    viewport_width: Pixels,
+    margin: Pixels,
+) -> Point<Pixels> {
+    if anchor.x + width + margin > viewport_width && anchor.x - width >= margin {
         point(anchor.x - width, anchor.y)
     } else {
         anchor
     }
 }
 
-fn submenu_offset(state: &ContextMenuState, index: usize) -> Pixels {
-    state.items.iter().take(index).fold(px(4.), |offset, item| {
-        offset
-            + if item.is_separator {
-                px(MENU_SEPARATOR_HEIGHT)
-            } else {
-                px(MENU_ROW_HEIGHT)
-            }
-    })
+fn submenu_offset(state: &ContextMenuState, index: usize, t: &Theme) -> Pixels {
+    state
+        .items
+        .iter()
+        .take(index)
+        .fold(px(t.scaled_font_size(4.)), |offset, item| {
+            offset
+                + if item.is_separator {
+                    px(t.scaled_font_size(MENU_SEPARATOR_HEIGHT - 1.) + 1.)
+                } else {
+                    px(t.scaled_font_size(MENU_ROW_HEIGHT))
+                }
+        })
 }
 
 /// Fits the longest label, the shortcut letters and the submenu caret at the current zoom.
@@ -321,15 +329,17 @@ fn menu_width(items: &[ContextMenuItem], t: &Theme, cx: &App) -> Pixels {
         .iter()
         .filter_map(|item| item.shortcut)
         .map(|shortcut| {
-            ui_text_width(cx, &shortcut.to_ascii_uppercase().to_string(), size) + px(MENU_ROW_GAP)
+            ui_text_width(cx, &shortcut.to_ascii_uppercase().to_string(), size)
+                + px(t.scaled_font_size(MENU_ROW_GAP))
         })
         .fold(px(0.), Pixels::max);
     let caret = if items.iter().any(|item| item.submenu.is_some()) {
-        px(MENU_ROW_GAP + MENU_CARET_SIZE)
+        px(t.scaled_font_size(MENU_ROW_GAP + MENU_CARET_SIZE))
     } else {
         px(0.)
     };
-    let chrome = px(2. * MENU_ROW_PADDING_X + MENU_ICON_SIZE + MENU_ROW_GAP + 2.);
+    let chrome =
+        px(t.scaled_font_size(2. * MENU_ROW_PADDING_X + MENU_ICON_SIZE + MENU_ROW_GAP) + 2.);
     let scale = t.scaled_font_size(1.);
     (chrome + label + shortcut + caret)
         .clamp(px(MENU_MIN_WIDTH * scale), px(MENU_MAX_WIDTH * scale))
@@ -347,7 +357,7 @@ fn menu_panel(
         .flex()
         .flex_col()
         .w(width)
-        .py(px(4.))
+        .py(ui_size(4.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
@@ -355,7 +365,7 @@ fn menu_panel(
 
     for (ix, item) in items.iter().enumerate() {
         if item.is_separator {
-            col = col.child(div().h(px(1.)).my(px(4.)).bg(rgb(t.border)));
+            col = col.child(div().h(px(1.)).my(ui_size(4.)).bg(rgb(t.border)));
         } else {
             col = col.child(menu_row(ix, item, level, selected == Some(ix), t, view));
         }
@@ -390,10 +400,10 @@ fn menu_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(MENU_ROW_GAP))
-        .px(px(MENU_ROW_PADDING_X))
-        .py(px(6.))
-        .text_size(ui_font_size(MENU_FONT))
+        .gap(ui_size(MENU_ROW_GAP))
+        .px(ui_size(MENU_ROW_PADDING_X))
+        .py(ui_size(6.))
+        .text_size(ui_size(MENU_FONT))
         .text_color(rgb(t.fg))
         .when(selected && enabled, |row| row.bg(rgb(t.selected_bg)));
     let hover_view = view.clone();

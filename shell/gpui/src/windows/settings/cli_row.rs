@@ -2,13 +2,13 @@ use std::path::Path;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
 use super::SettingsView;
 use super::shared::detail_row;
 use crate::app::cli_install::{self, CliInstallState, EntryStatus};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
 use jayjay_i18n::{common, settings};
@@ -22,7 +22,7 @@ pub(super) fn command_line_rows(
     if !cli_install::supported() {
         return None;
     }
-    let mut col = div().flex().flex_col().w_full().gap(px(2.));
+    let mut col = div().flex().flex_col().w_full().gap(ui_size(2.));
     match install {
         Some(Some(state)) => {
             col = col.child(install_row(state, t, cx));
@@ -49,7 +49,7 @@ fn install_row(state: &CliInstallState, t: &Theme, cx: &mut Context<SettingsView
     let install_path = state.install_path().display().to_string();
     let mut row = detail_row(glyph::TERMINAL, "jayjay", install_path, t.fg_dim, t)
         .debug_selector(|| "settings-cli-install-row".to_owned())
-        .py(px(4.));
+        .py(ui_size(4.));
     match &state.status {
         EntryStatus::NotInstalled => {
             row = row.child(action_button(
@@ -127,8 +127,8 @@ fn hint_lines(state: &CliInstallState, t: &Theme) -> Vec<(String, u32)> {
 fn hint_line(text: String, color: u32) -> AnyElement {
     div()
         .w_full()
-        .px(px(8.))
-        .text_size(ui_font_size(11.))
+        .px(ui_size(8.))
+        .text_size(ui_size(11.))
         .text_color(rgb(color))
         .child(SharedString::from(text))
         .into_any_element()

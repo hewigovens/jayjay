@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::compare::CompareState;
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::DETAIL_INSET;
 use crate::repo::RepoWindow;
 use crate::ui::icons::{glyph, icon};
@@ -22,14 +22,14 @@ pub(super) fn compare_banner(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(DETAIL_INSET))
-        .py(px(8.))
+        .gap(ui_size(8.))
+        .px(px(t.scaled_font_size(DETAIL_INSET)))
+        .py(ui_size(8.))
         .bg(rgb(t.compare_bg))
         .child(compare_leading_control(compare, can_reverse, t, cx))
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(compare.display.title.clone())),
@@ -43,7 +43,7 @@ pub(super) fn compare_banner(
     if let Some(file_count) = file_count {
         row = row.child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(jayjay_i18n::repo::files_changed_count(
                     file_count,
@@ -57,7 +57,7 @@ pub(super) fn compare_banner(
             .flex()
             .items_center()
             .justify_center()
-            .size(px(18.))
+            .size(ui_size(18.))
             .rounded_md()
             .cursor_pointer()
             .on_click(cx.listener(|view, _, _window, cx| {
@@ -80,7 +80,7 @@ fn compare_leading_control(
             .flex()
             .items_center()
             .justify_center()
-            .size(px(20.))
+            .size(ui_size(20.))
             .child(icon(glyph::ROWS, 17., t.compare_accent))
             .into_any_element();
     }
@@ -91,7 +91,7 @@ fn compare_leading_control(
         .flex()
         .items_center()
         .justify_center()
-        .size(px(20.))
+        .size(ui_size(20.))
         .rounded_md()
         .child(icon(glyph::ARROWS_LEFT_RIGHT, 17., t.compare_accent));
 
@@ -110,7 +110,7 @@ fn compare_leading_control(
 
 fn compare_label(label: &str, t: &Theme) -> AnyElement {
     div()
-        .max_w(px(180.))
+        .max_w(ui_size(180.))
         .overflow_hidden()
         .code_text(12., t)
         .font_weight(gpui::FontWeight::SEMIBOLD)

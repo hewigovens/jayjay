@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, AppContext as _, ClipboardItem, Context, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::{HostLogin, JayError, RepoHost, SyncToken};
 use jayjay_i18n::{common, settings};
@@ -8,7 +8,7 @@ use jayjay_i18n::{common, settings};
 use super::SettingsView;
 use super::shared::form_section;
 use super::tools::{ToolState, status_row};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::button;
 
@@ -82,14 +82,14 @@ fn sign_in_row(sign_in: &ForgeSignIn, t: &Theme, cx: &mut Context<SettingsView>)
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .pl(px(28.))
-        .py(px(4.))
+        .gap(ui_size(8.))
+        .pl(ui_size(28.))
+        .py(ui_size(4.))
         .child(
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(if sign_in.error.is_some() {
                     t.error_fg
                 } else {

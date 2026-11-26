@@ -11,7 +11,7 @@ use std::sync::Arc;
 use jayjay_core::DiffRenderKind;
 use jayjay_markdown::MarkdownDocument;
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::bounds_capture;
 use crate::diff::media_diff::{format_size, rich_preview_with_gutter, single_pane_layout};
 use crate::repo::window::{PanelBoundsSlot, RepoWindow};
@@ -47,7 +47,7 @@ pub(crate) fn markdown_diff_view(
         .flex_1()
         .min_w_0()
         .min_h_0()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(viewer);
     if !style.is_table_projection() {
         pane = pane.child(metadata_line(state.document.map(Arc::as_ref), t));

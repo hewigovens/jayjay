@@ -8,7 +8,7 @@ use unicode_width::UnicodeWidthStr;
 use super::{COMPACT_HEADER_WIDTH, DETAIL_INSET, FileHeaderState};
 use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::file_column::head_elide;
 use crate::diff::projection;
 use crate::repo::window::RepoWindow;
@@ -57,7 +57,7 @@ pub(crate) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl I
         .flex_shrink_1()
         .min_w_0()
         .truncate()
-        .text_size(ui_font_size(PATH_FONT_SIZE))
+        .text_size(ui_size(PATH_FONT_SIZE))
         .line_height(px(t.scaled_font_size(PATH_LINE_HEIGHT)))
         .font_weight(FontWeight::MEDIUM)
         .text_color(rgb(t.fg))
@@ -99,7 +99,7 @@ pub(crate) fn source_path_label(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(4.))
+        .gap(ui_size(4.))
         .min_w_0()
         .child(if renamed { path.line_through() } else { path })
         .child(icons::icon(glyph::ARROW_RIGHT, 10., t.fg_dim))
@@ -116,17 +116,18 @@ pub(super) fn header_reserved_width(
     let text = |chars: usize, size: f32| chars as f32 * t.scaled_font_size(size) * 0.55;
     let compact = state.detail_width < COMPACT_HEADER_WIDTH;
     let action = |label: &str| {
-        28. + if compact {
-            0.
-        } else {
-            text(label.width(), 11.)
-        }
+        t.scaled_font_size(28.)
+            + if compact {
+                0.
+            } else {
+                text(label.width(), 11.)
+            }
     };
-    let mut reserved = 2. * DETAIL_INSET + 40. + 20.; // padding, inter-child gaps, file icon
+    let mut reserved = t.scaled_font_size(2. * DETAIL_INSET + 40. + 20.); // padding, inter-child gaps, file icon
     if state.collapsed.is_some() {
-        reserved += 16.;
+        reserved += t.scaled_font_size(16.);
     }
-    reserved += 20. + 16. + text(status.width(), 10.); // copy button, status pill
+    reserved += t.scaled_font_size(20. + 16.) + text(status.width(), 10.); // copy button, status pill
     if let Some(stats) = state.line_stats {
         reserved += text(
             format!("+{} -{}", stats.insertions, stats.deletions).len(),
@@ -140,10 +141,10 @@ pub(super) fn header_reserved_width(
         reserved += action(&jayjay_i18n::diff::edit_file());
     }
     if state.is_annotating {
-        reserved += 100.;
+        reserved += t.scaled_font_size(100.);
     }
     if has_old_path {
-        reserved += 170.;
+        reserved += t.scaled_font_size(170.);
     }
     let preview_buttons = show_projection_button as usize
         + state.can_render_markdown_preview as usize
@@ -156,7 +157,7 @@ pub(super) fn header_reserved_width(
     {
         reserved += action(&jayjay_i18n::diff::source());
     }
-    reserved += 28. * state.html_external_url.is_some() as usize as f32;
+    reserved += t.scaled_font_size(28.) * state.html_external_url.is_some() as usize as f32;
     reserved
 }
 

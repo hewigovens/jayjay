@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::button;
 
@@ -48,8 +48,8 @@ pub(crate) fn file_editor_overlay(
         .flex_col()
         .w_full()
         .h_full()
-        .max_w(px(1120.))
-        .max_h(px(780.))
+        .max_w(ui_size(1120.))
+        .max_h(ui_size(780.))
         .min_w_0()
         .min_h_0()
         .overflow_hidden()
@@ -62,9 +62,9 @@ pub(crate) fn file_editor_overlay(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(10.))
+                .gap(ui_size(10.))
                 .h(px(t.scaled_control_height(52., 14.)))
-                .px(px(14.))
+                .px(ui_size(14.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
                 .border_color(rgb(t.border))
@@ -76,7 +76,7 @@ pub(crate) fn file_editor_overlay(
                         .child(
                             div()
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                                .text_size(ui_font_size(14.))
+                                .text_size(ui_size(14.))
                                 .child(jayjay_i18n::repo::edit_working_copy_file()),
                         )
                         .child(
@@ -90,7 +90,7 @@ pub(crate) fn file_editor_overlay(
                 .child(div().flex_1())
                 .children(has_changes.then(|| {
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.tag_conflict_fg))
                         .child(jayjay_i18n::repo::modified())
                 }))
@@ -110,11 +110,11 @@ pub(crate) fn file_editor_overlay(
                 .flex()
                 .items_center()
                 .h(px(t.scaled_control_height(34., 11.)))
-                .px(px(10.))
+                .px(ui_size(10.))
                 .bg(rgb(t.header_bg))
                 .border_b_1()
                 .border_color(rgb(t.border))
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::repo::edits_are_saved_directly_to_the()),
         )
@@ -128,5 +128,8 @@ pub(crate) fn file_editor_overlay(
                 .children(state.editor.clone()),
         );
 
-    overlay_layer().p(px(16.)).child(panel).into_any_element()
+    overlay_layer()
+        .p(ui_size(16.))
+        .child(panel)
+        .into_any_element()
 }

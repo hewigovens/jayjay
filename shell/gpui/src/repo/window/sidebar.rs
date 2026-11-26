@@ -13,7 +13,7 @@ use super::dag_drag::DagDragSelection;
 use super::dag_row::{ChipMenus, ChipRightClick, DagDrop, DagRow, dag_row};
 use super::{ActivePane, RepoWindow};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
+use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_size};
 use crate::ui::context_menu::ContextMenuItem;
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{HelpTag, button, icon_button, icon_label, no_scrollbar_gutter};
@@ -63,7 +63,7 @@ pub(super) fn sidebar(
         let dag_layout = view.vm.read(cx).graph.dag_layout.clone();
         let entries = view.vm.read(cx).graph.entries.clone();
         let refs_budget = width
-            - super::dag::lane_column_width(dag_layout.display_lane_count())
+            - super::dag::lane_column_width(dag_layout.display_lane_count(), t)
             - t.scaled_font_size(12.);
         let list = uniform_list(
             "changes",
@@ -238,11 +238,11 @@ pub(super) fn sidebar(
             .flex()
             .flex_row()
             .items_center()
-            .gap(px(8.))
+            .gap(ui_size(8.))
             .w_full()
             .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
-            .pl(px(8.))
-            .pr(px(14.))
+            .pl(ui_size(8.))
+            .pr(ui_size(14.))
             .border_b_1()
             .border_color(rgb(t.border))
             .child(bookmarks_header_button(
@@ -277,7 +277,7 @@ pub(super) fn sidebar(
             .child(
                 div()
                     .flex_none()
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .text_color(rgb(t.fg_dim))
                     .debug_selector(move || format!("sidebar-changes-header-{change_count}"))
                     .child(jayjay_i18n::repo::change_count(change_count)),
@@ -316,8 +316,8 @@ fn count_badge(
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(2.))
-        .text_size(ui_font_size(12.))
+        .gap(ui_size(2.))
+        .text_size(ui_size(12.))
         .font_weight(gpui::FontWeight::MEDIUM)
         .text_color(rgb(color))
         .role(Role::Button)
@@ -351,13 +351,13 @@ fn push_follow_up_banner(
             .flex()
             .flex_row()
             .items_center()
-            .gap(px(6.))
-            .px(px(12.))
-            .py(px(8.))
+            .gap(ui_size(6.))
+            .px(ui_size(12.))
+            .py(ui_size(8.))
             .border_b_1()
             .border_color(rgb(t.sidebar_row_border))
             .bg(rgb(t.sidebar_bg))
-            .text_size(ui_font_size(FONT_META))
+            .text_size(ui_size(FONT_META))
             .text_color(rgb(t.fg_dim))
             .debug_selector(|| "pending-push-banner".to_owned())
             .child(icon_label(
@@ -393,9 +393,9 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
     div()
         .flex()
         .flex_col()
-        .gap(px(8.))
-        .px(px(12.))
-        .py(px(12.))
+        .gap(ui_size(8.))
+        .px(ui_size(12.))
+        .py(ui_size(12.))
         .border_t_1()
         .border_color(rgb(t.sidebar_row_border))
         .bg(rgb(t.sidebar_bg))
@@ -407,7 +407,7 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
                 .flex_row()
                 .items_center()
                 .justify_end()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(super::commit_ai::generate_button(
                     view,
                     RepoWindow::generate_commit_message,
@@ -433,7 +433,7 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
                         t,
                         cx,
                     )
-                    .min_w(px(76.)),
+                    .min_w(ui_size(76.)),
                 ),
         )
         .into_any_element()
@@ -468,13 +468,13 @@ fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .w_full()
         .items_center()
         .justify_center()
-        .gap(px(6.))
-        .px(px(12.))
-        .py(px(6.))
+        .gap(ui_size(6.))
+        .px(ui_size(12.))
+        .py(ui_size(6.))
         .bg(rgb(t.header_bg))
         .border_t_1()
         .border_color(rgb(t.border))
-        .text_size(ui_font_size(FONT_META))
+        .text_size(ui_size(FONT_META))
         .text_color(rgb(t.fg_dim))
         .child(icon_label(glyph::ARROW_DOWN, label, 12., t.fg_dim));
     if !loading {

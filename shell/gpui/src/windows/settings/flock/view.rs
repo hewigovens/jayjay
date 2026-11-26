@@ -1,7 +1,7 @@
 use super::activation::Activation;
 use super::artwork::Artwork;
 use super::store_source::FlockStoreSource;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::app::{config, links};
 use crate::ui::icons::{self, glyph};
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_layer};
@@ -164,16 +164,16 @@ impl FlockView {
         let mut header = div()
             .flex()
             .flex_col()
-            .gap(px(6.))
+            .gap(ui_size(6.))
             .child(
                 div()
                     .flex()
                     .items_center()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         div()
                             .flex_1()
-                            .text_size(ui_font_size(24.))
+                            .text_size(ui_size(24.))
                             .font_weight(FontWeight::BOLD)
                             .child(settings::flock_title()),
                     )
@@ -209,9 +209,9 @@ impl FlockView {
             .flex()
             .flex_col()
             .items_center()
-            .gap(px(8.))
-            .p(px(20.))
-            .w(px(230.))
+            .gap(ui_size(8.))
+            .p(ui_size(20.))
+            .w(ui_size(230.))
             .max_w_full()
             .rounded_lg()
             .bg(rgb(FEATHER_BG))
@@ -219,16 +219,16 @@ impl FlockView {
             .shadow_md()
             .child(
                 div()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(settings::flock_title()),
             )
-            .child(img(self.artwork.feather.clone()).size(px(130.)))
+            .child(img(self.artwork.feather.clone()).size(ui_size(130.)))
             .child(
                 div()
                     .w_full()
                     .min_w_0()
-                    .text_size(ui_font_size(19.))
+                    .text_size(ui_size(19.))
                     .font_weight(FontWeight::MEDIUM)
                     .text_center()
                     .line_clamp(2)
@@ -236,7 +236,7 @@ impl FlockView {
             )
             .child(
                 div()
-                    .text_size(ui_font_size(9.))
+                    .text_size(ui_size(9.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(settings::flock_feather_title()),
             );
@@ -265,9 +265,9 @@ impl FlockView {
                     .flex()
                     .flex_col()
                     .items_center()
-                    .gap(px(6.))
-                    .w(px(88.))
-                    .p(px(6.))
+                    .gap(ui_size(6.))
+                    .w(ui_size(88.))
+                    .p(ui_size(6.))
                     .rounded_lg()
                     .when(selected, |tile| tile.bg(rgb(t.selected_bg)))
                     .child(div().relative().child(self.bird(icon, 72., t)).when(
@@ -276,15 +276,15 @@ impl FlockView {
                             image.child(
                                 div()
                                     .absolute()
-                                    .top(px(-2.))
-                                    .right(px(-2.))
+                                    .top(ui_size(-2.))
+                                    .right(ui_size(-2.))
                                     .child(icons::icon(glyph::CHECK, 14., t.selected_accent)),
                             )
                         },
                     ))
                     .child(
                         div()
-                            .text_size(ui_font_size(11.))
+                            .text_size(ui_size(11.))
                             .text_center()
                             .child(icon.title()),
                     );
@@ -296,18 +296,18 @@ impl FlockView {
         div()
             .flex()
             .flex_col()
-            .gap(px(12.))
+            .gap(ui_size(12.))
             .w_full()
-            .p(px(16.))
+            .p(ui_size(16.))
             .rounded_lg()
             .bg(rgb(t.row_alt_bg))
             .child(
                 div()
-                    .text_size(ui_font_size(13.))
+                    .text_size(ui_size(13.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(settings::flock_about_icon()),
             )
-            .child(div().flex().flex_wrap().gap(px(12.)).children(tiles))
+            .child(div().flex().flex_wrap().gap(ui_size(12.)).children(tiles))
             .child(dim(settings::flock_about_detail(), 11., t))
     }
 
@@ -317,47 +317,47 @@ impl FlockView {
             .flex()
             .flex_col()
             .items_center()
-            .gap(px(8.))
-            .p(px(20.))
-            .w(px(230.))
+            .gap(ui_size(8.))
+            .p(ui_size(20.))
+            .w(ui_size(230.))
             .max_w_full()
             .rounded_lg()
             .bg(rgb(FEATHER_BG))
             .shadow_md()
-            .child(blob(FEATHER_FG, 90., 12.))
-            .child(blob(Artwork::FEATHER_TINT, 130., 130.))
-            .child(blob(FEATHER_FG, 150., 22.))
-            .child(blob(FEATHER_FG, 70., 10.));
+            .child(blob(FEATHER_FG, 90., 12., t))
+            .child(blob(Artwork::FEATHER_TINT, 130., 130., t))
+            .child(blob(FEATHER_FG, 150., 22., t))
+            .child(blob(FEATHER_FG, 70., 10., t));
         let tiles = FlockIcon::ALL.into_iter().map(|icon| {
             div()
                 .flex()
                 .flex_col()
                 .items_center()
-                .gap(px(6.))
-                .w(px(88.))
-                .p(px(6.))
-                .child(blob(Artwork::tint(icon), 72., 72.))
-                .child(blob(ink, 56., 10.))
+                .gap(ui_size(6.))
+                .w(ui_size(88.))
+                .p(ui_size(6.))
+                .child(blob(Artwork::tint(icon), 72., 72., t))
+                .child(blob(ink, 56., 10., t))
         });
         div()
             .flex()
             .flex_col()
             .items_center()
-            .gap(px(20.))
-            .child(div().w_full().child(blob(ink, 180., 28.)))
+            .gap(ui_size(20.))
+            .child(div().w_full().child(blob(ink, 180., 28., t)))
             .child(feather)
             .child(
                 div()
                     .flex()
                     .flex_col()
-                    .gap(px(12.))
+                    .gap(ui_size(12.))
                     .w_full()
-                    .p(px(16.))
+                    .p(ui_size(16.))
                     .rounded_lg()
                     .bg(rgb(t.row_alt_bg))
-                    .child(blob(ink, 90., 14.))
-                    .child(div().flex().flex_wrap().gap(px(12.)).children(tiles))
-                    .child(blob(ink, 200., 10.)),
+                    .child(blob(ink, 90., 14., t))
+                    .child(div().flex().flex_wrap().gap(ui_size(12.)).children(tiles))
+                    .child(blob(ink, 200., 10., t)),
             )
     }
 
@@ -386,18 +386,18 @@ impl FlockView {
             .flex()
             .items_center()
             .justify_center()
-            .p(px(24.))
+            .p(ui_size(24.))
             .child(
                 div()
                     .debug_selector(|| "flock-gift".to_owned())
                     .flex()
                     .flex_col()
                     .items_center()
-                    .gap(px(12.))
-                    .w(px(360.))
+                    .gap(ui_size(12.))
+                    .w(ui_size(360.))
                     .max_w_full()
-                    .p(px(24.))
-                    .rounded(px(16.))
+                    .p(ui_size(24.))
+                    .rounded(ui_size(16.))
                     .border_1()
                     .border_color(rgb(t.border))
                     .bg(rgb(mix(t.detail_bg, t.fg, 0.1)))
@@ -406,7 +406,7 @@ impl FlockView {
                     .child(icons::icon(glyph::GIFT, 24., t.selected_accent))
                     .child(
                         div()
-                            .text_size(ui_font_size(19.))
+                            .text_size(ui_size(19.))
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(settings::flock_claim()),
                     )
@@ -476,7 +476,7 @@ impl FlockView {
         if let Some((code, _)) = &activation.sign_in {
             card = card.child(
                 div()
-                    .text_size(ui_font_size(22.))
+                    .text_size(ui_size(22.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .font_family(crate::app::fonts::mono())
                     .child(code.clone()),
@@ -546,7 +546,7 @@ impl Render for FlockView {
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let page = div()
             .debug_selector(|| "settings-flock".to_owned())
-            .text_size(ui_font_size(12.));
+            .text_size(ui_size(12.));
         if !self.loaded {
             return page.child(common::checking());
         }
@@ -558,7 +558,7 @@ impl Render for FlockView {
                 .flex()
                 .flex_col()
                 .items_center()
-                .gap(px(20.))
+                .gap(ui_size(20.))
                 .child(self.header(&t, cx).w_full())
                 .child(self.feather(member, cx))
                 .child(dim(settings::flock_keep(), 11., &t))
@@ -591,7 +591,7 @@ fn link(id: impl Into<SharedString>, label: impl Into<SharedString>, color: u32)
     div()
         .id(id.into())
         .aria_label(label.clone())
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(color))
         .cursor_pointer()
         .hover(|s| s.underline())
@@ -613,11 +613,11 @@ fn sponsor_link(t: &Theme, cx: &Context<FlockView>) -> Stateful<Div> {
 
 fn sheet_card(title: impl Into<SharedString>, t: &Theme) -> Div {
     overlay_card(t, 420.)
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg))
         .child(
             div()
-                .text_size(ui_font_size(14.))
+                .text_size(ui_size(14.))
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child(title.into()),
@@ -632,7 +632,8 @@ fn field(selector: &'static str, input: &Entity<TextArea>, cx: &App) -> Stateful
         .child(input.clone())
 }
 
-fn blob(color: u32, width: f32, height: f32) -> Div {
+fn blob(color: u32, width: f32, height: f32, t: &Theme) -> Div {
+    let (width, height) = (t.scaled_font_size(width), t.scaled_font_size(height));
     let blur = width.min(height) * 0.35;
     div()
         .flex_none()
@@ -656,7 +657,7 @@ fn blob(color: u32, width: f32, height: f32) -> Div {
 
 fn dim(text: impl Into<SharedString>, size: f32, t: &Theme) -> Div {
     div()
-        .text_size(ui_font_size(size))
+        .text_size(ui_size(size))
         .text_color(rgb(t.fg_dim))
         .whitespace_normal()
         .child(text.into())
@@ -665,7 +666,7 @@ fn dim(text: impl Into<SharedString>, size: f32, t: &Theme) -> Div {
 fn error(text: String, t: &Theme) -> Div {
     div()
         .debug_selector(|| "flock-error".to_owned())
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.error_fg))
         .whitespace_normal()
         .child(text)

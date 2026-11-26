@@ -8,7 +8,7 @@ use gpui::{
 };
 use jayjay_markdown::MarkdownTableRow;
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 
 use super::blocks::MarkdownDocumentStyle;
 
@@ -37,7 +37,7 @@ pub(super) fn table_block(
             .w_full()
             .debug_selector(|| "markdown-table-preview".to_owned());
     } else {
-        table = table.min_w(px(360.)).rounded_sm();
+        table = table.min_w(ui_size(360.)).rounded_sm();
     }
 
     let column_count = rows.iter().map(|row| row.cells.len()).max().unwrap_or(0);
@@ -62,27 +62,27 @@ fn table_row(
     let mut el = div().flex().flex_row();
     for (i, cell) in row.cells.iter().enumerate() {
         let mut cell_el = div()
-            .px(px(8.))
-            .py(px(6.))
+            .px(ui_size(8.))
+            .py(ui_size(6.))
             .border_r_1()
             .border_b_1()
             .border_color(rgb(t.border))
-            .text_size(ui_font_size(12.))
-            .line_height(ui_font_size(18.))
+            .text_size(ui_size(12.))
+            .line_height(ui_size(18.))
             .text_color(rgb(t.fg))
             .child(SharedString::from(cell.clone()));
         if style.is_table_projection() {
             cell_el = cell_el
-                .px(px(9.))
-                .py(px(8.))
-                .text_size(ui_font_size(14.))
-                .line_height(ui_font_size(21.));
+                .px(ui_size(9.))
+                .py(ui_size(8.))
+                .text_size(ui_size(14.))
+                .line_height(ui_size(21.));
         }
         // Ragged rows (more cells than the computed column count) fall back to the old
         // equal-share behavior for the overflowing cells rather than panicking or dropping them.
         cell_el = match widths.get(i) {
             Some(&width) => cell_el.w(width).flex_none(),
-            None => cell_el.min_w(px(120.)).flex_1(),
+            None => cell_el.min_w(ui_size(120.)).flex_1(),
         };
         if row.header {
             cell_el = cell_el
@@ -112,14 +112,14 @@ fn column_widths(
     let available = available_width
         .map(f32::from)
         .unwrap_or(FALLBACK_AVAILABLE_WIDTH)
-        - chrome_padding(style);
+        - chrome_padding(style, window);
     distribute_column_widths(&max_content, &min_content, available.max(0.))
         .into_iter()
         .map(px)
         .collect()
 }
 
-fn chrome_padding(style: MarkdownDocumentStyle) -> f32 {
+fn chrome_padding(style: MarkdownDocumentStyle, window: &Window) -> f32 {
     let doc_padding = if style.is_table_projection() {
         22.
     } else {
@@ -130,7 +130,7 @@ fn chrome_padding(style: MarkdownDocumentStyle) -> f32 {
     } else {
         MARKDOWN_FRAME_BORDER
     };
-    doc_padding + frame_border + TABLE_BORDER
+    f32::from(ui_size(doc_padding).to_pixels(window.rem_size())) + frame_border + TABLE_BORDER
 }
 
 fn cell_font_size(style: MarkdownDocumentStyle) -> f32 {
@@ -151,8 +151,8 @@ fn measure_columns(
     style: MarkdownDocumentStyle,
     window: &Window,
 ) -> (Vec<f32>, Vec<f32>) {
-    let size = ui_font_size(cell_font_size(style)).to_pixels(window.rem_size());
-    let padding = cell_padding(style);
+    let size = ui_size(cell_font_size(style)).to_pixels(window.rem_size());
+    let padding = f32::from(ui_size(cell_padding(style)).to_pixels(window.rem_size()));
     let mut max_content = vec![0f32; column_count];
     let mut min_content = vec![0f32; column_count];
     for row in rows {

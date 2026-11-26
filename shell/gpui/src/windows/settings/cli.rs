@@ -1,6 +1,5 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div,
-    px,
 };
 
 use super::SettingsView;
@@ -9,7 +8,7 @@ use super::cli_row;
 use super::shared::{detail_row, feedback_copy_icon_button, form_section};
 use super::tools::{AiToolStatuses, binary_row, detected_cli_row};
 use crate::app::cli_install;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use jayjay_i18n::{common, settings};
 
@@ -28,7 +27,7 @@ pub(super) fn cli_sections(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .child(version_control_rows(
             ai_tools,
             diagnostics,

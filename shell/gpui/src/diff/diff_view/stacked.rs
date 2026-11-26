@@ -39,9 +39,9 @@ impl StackedRows<'_> {
                 .any(|note| note.status == NoteStatus::Current && !note.note.resolved)
     }
 
-    pub(crate) fn banner_height(&self) -> f32 {
+    pub(crate) fn banner_height(&self, theme: &Theme) -> f32 {
         if self.shows_note_banner() {
-            STACKED_NOTE_BANNER_HEIGHT
+            theme.scaled_font_size(STACKED_NOTE_BANNER_HEIGHT)
         } else {
             0.
         }
@@ -112,7 +112,7 @@ impl StackedRows<'_> {
                 );
                 let banner = sbs_note_banner(self.notes, theme, cx).map(|banner| {
                     div()
-                        .h(px(STACKED_NOTE_BANNER_HEIGHT))
+                        .h(px(theme.scaled_font_size(STACKED_NOTE_BANNER_HEIGHT)))
                         .overflow_hidden()
                         .child(banner)
                 });

@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{OverviewBase, OverviewBaseKind, OverviewChange, OverviewLane};
@@ -11,7 +11,7 @@ use super::menu::OverviewAction;
 use super::panel::{
     note, panel_actions, panel_frame, panel_header, panel_meta, section, show_in_graph_button,
 };
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::{compact_id, format_relative, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, small_button};
@@ -129,7 +129,7 @@ impl OverviewView {
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(capsule(
                     workspace_label(workspace),
                     t.tag_wc_bg,
@@ -163,11 +163,11 @@ impl OverviewView {
                 .flex()
                 .flex_row()
                 .items_start()
-                .gap(px(8.))
-                .mx(px(-6.))
-                .px(px(6.))
-                .py(px(3.))
-                .rounded(px(4.))
+                .gap(ui_size(8.))
+                .mx(ui_size(-6.))
+                .px(ui_size(6.))
+                .py(ui_size(3.))
+                .rounded(ui_size(4.))
                 .cursor_pointer()
                 .hover(|row| row.bg(rgb(t.row_alt_bg)))
                 .child(id_cell(
@@ -181,7 +181,7 @@ impl OverviewView {
                     div()
                         .flex_1()
                         .min_w_0()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .text_color(rgb(description_color(&change.description, t)))
                         .child(SharedString::from(change.title().to_owned())),
                 )
@@ -203,13 +203,13 @@ fn attention_list(lane: &OverviewLane, t: &Theme) -> Option<AnyElement> {
         div()
             .flex()
             .flex_col()
-            .gap(px(4.))
+            .gap(ui_size(4.))
             .children(lane.attention.iter().map(|sentence| {
                 div()
                     .flex()
                     .flex_row()
                     .items_center()
-                    .gap(px(6.))
+                    .gap(ui_size(6.))
                     .child(icons::icon(glyph::WARNING, 11., t.warning_fg))
                     .child(note(sentence.clone(), t.warning_fg))
             }))
@@ -224,10 +224,15 @@ fn bookmark_section(lane: &OverviewLane, t: &Theme) -> Option<AnyElement> {
         .flat_map(|change| &change.bookmarks)
         .peekable();
     bookmarks.peek()?;
-    let chips = div().flex().flex_row().flex_wrap().gap(px(4.)).children(
-        bookmarks
-            .map(|bookmark| capsule(bookmark.clone(), t.tag_bookmark_bg, t.tag_bookmark_fg, 10.)),
-    );
+    let chips =
+        div()
+            .flex()
+            .flex_row()
+            .flex_wrap()
+            .gap(ui_size(4.))
+            .children(bookmarks.map(|bookmark| {
+                capsule(bookmark.clone(), t.tag_bookmark_bg, t.tag_bookmark_fg, 10.)
+            }));
     Some(section(
         jayjay_i18n::overview::bookmarks(),
         t,

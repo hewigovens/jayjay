@@ -1,9 +1,9 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::{RepoWindow, Toast};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_card, overlay_header, overlay_layer};
@@ -26,8 +26,8 @@ pub(crate) fn error_overlay(
                 ))
                 .child(
                     div()
-                        .text_size(ui_font_size(12.))
-                        .line_height(ui_font_size(18.))
+                        .text_size(ui_size(12.))
+                        .line_height(ui_size(18.))
                         .text_color(rgb(t.fg_dim))
                         .child(message),
                 )
@@ -52,16 +52,16 @@ pub(crate) fn toast_overlay(toast: Toast, t: &Theme, cx: &mut Context<RepoWindow
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(12.))
-        .max_w(px(520.))
-        .px(px(18.))
-        .py(px(10.))
-        .rounded(px(14.))
+        .gap(ui_size(12.))
+        .max_w(ui_size(520.))
+        .px(ui_size(18.))
+        .py(ui_size(10.))
+        .rounded(ui_size(14.))
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.header_bg))
-        .text_size(ui_font_size(13.))
-        .line_height(ui_font_size(18.))
+        .text_size(ui_size(13.))
+        .line_height(ui_size(18.))
         .font_weight(gpui::FontWeight::MEDIUM)
         .text_color(rgb(t.fg))
         .child(toast.message);
@@ -83,7 +83,7 @@ pub(crate) fn toast_overlay(toast: Toast, t: &Theme, cx: &mut Context<RepoWindow
         .flex()
         .items_center()
         .justify_center()
-        .px(px(24.))
+        .px(ui_size(24.))
         .child(card)
         .into_any_element()
 }

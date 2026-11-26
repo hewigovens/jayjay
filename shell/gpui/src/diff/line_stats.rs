@@ -1,8 +1,8 @@
-use gpui::{Div, ParentElement, Styled, div, px, rgb};
+use gpui::{Div, ParentElement, Styled, div, rgb};
 use jayjay_core::FileDiffStats;
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 
 /// `+N -M`, omitting a zero side; `None` when the file has no line changes.
 pub(crate) fn line_stats(
@@ -20,7 +20,7 @@ pub(crate) fn line_stats(
         .flex_none()
         .flex_row()
         .items_baseline()
-        .gap(px(4.))
+        .gap(ui_size(4.))
         .code_text(size, theme)
         .font_weight(gpui::FontWeight::SEMIBOLD);
     if stats.insertions > 0 {

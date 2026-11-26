@@ -11,7 +11,7 @@ use super::render::{caption, card_frame, link, loaded};
 use crate::app::actions::{MergeUseLeftHunk, MergeUseRightHunk};
 use crate::app::fonts::CodeText as _;
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::{file_status, read_only_diff};
 use crate::repo::window::{RepoWindow, first_line, format_when};
 use crate::ui::icons::{glyph, icon};
@@ -54,9 +54,10 @@ impl ConvergeBody<'_> {
         actions.extend(self.extra_actions(item, cx));
         let content = match (item, &self.sheet.description) {
             (ConvergeItem::Contents, _) => self.contents(cx),
-            (ConvergeItem::Description, Some(editor)) => {
-                div().p(px(8.)).child(editor.clone()).into_any_element()
-            }
+            (ConvergeItem::Description, Some(editor)) => div()
+                .p(ui_size(8.))
+                .child(editor.clone())
+                .into_any_element(),
             _ => self.values(item),
         };
         card_frame(t)
@@ -68,13 +69,13 @@ impl ConvergeBody<'_> {
                 div()
                     .flex()
                     .items_center()
-                    .gap(px(8.))
-                    .px(px(10.))
-                    .py(px(7.))
+                    .gap(ui_size(8.))
+                    .px(ui_size(10.))
+                    .py(ui_size(7.))
                     .child(title(item))
                     .child(
                         div()
-                            .text_size(ui_font_size(11.))
+                            .text_size(ui_size(11.))
                             .font_weight(FontWeight::MEDIUM)
                             .text_color(rgb(status_color))
                             .child(status.label()),
@@ -91,9 +92,9 @@ impl ConvergeBody<'_> {
                     .flex()
                     .flex_wrap()
                     .items_center()
-                    .gap(px(14.))
-                    .px(px(10.))
-                    .py(px(5.))
+                    .gap(ui_size(14.))
+                    .px(ui_size(10.))
+                    .py(ui_size(5.))
                     .border_t_1()
                     .border_b_1()
                     .border_color(rgb(t.row_border))
@@ -197,9 +198,9 @@ impl ConvergeBody<'_> {
                         div()
                             .flex()
                             .items_baseline()
-                            .gap(px(10.))
-                            .px(px(10.))
-                            .py(px(5.))
+                            .gap(ui_size(10.))
+                            .px(ui_size(10.))
+                            .py(ui_size(5.))
                             .when(tinted, |row| row.bg(rgb(tint)))
                             .child(
                                 div()
@@ -239,9 +240,9 @@ impl ConvergeBody<'_> {
                         .debug_selector(move || selector.clone())
                         .flex()
                         .items_center()
-                        .gap(px(6.))
-                        .px(px(10.))
-                        .py(px(4.))
+                        .gap(ui_size(6.))
+                        .px(ui_size(10.))
+                        .py(ui_size(4.))
                         .child(icon(caret, 9., t.fg_dim))
                         .child(file_status::badge(file.hunk_type, 12., t))
                         .child(
@@ -278,8 +279,8 @@ impl ConvergeBody<'_> {
             div()
                 .flex()
                 .flex_col()
-                .gap(px(4.))
-                .p(px(10.))
+                .gap(ui_size(4.))
+                .p(ui_size(10.))
                 .bg(rgb(t.tag_conflict_bg))
                 .child(
                     div()
@@ -315,9 +316,9 @@ impl ConvergeBody<'_> {
                 .debug_selector(move || format!("converge-same-{}", item.slug()))
                 .flex()
                 .items_center()
-                .gap(px(10.))
-                .px(px(10.))
-                .py(px(7.))
+                .gap(ui_size(10.))
+                .px(ui_size(10.))
+                .py(ui_size(7.))
                 .when(index > 0, |row| {
                     row.border_t_1().border_color(rgb(t.row_border))
                 })
@@ -335,7 +336,7 @@ impl ConvergeBody<'_> {
 
 fn title(item: ConvergeItem) -> Div {
     div()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .font_weight(FontWeight::SEMIBOLD)
         .child(item.title())
 }
@@ -361,7 +362,7 @@ fn version_value(version: &ConvergeVersion, item: ConvergeItem) -> String {
 
 pub(super) fn value_text(value: String, item: ConvergeItem, t: &Theme) -> Div {
     let text = div()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .when(item == ConvergeItem::Parents, |text| text.code_text(12., t));
     if value.is_empty() {
         text.text_color(rgb(t.fg_dim))

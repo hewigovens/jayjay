@@ -8,7 +8,7 @@ use jayjay_core::{RevsetCompletion, RevsetCompletionKind, RevsetVocabulary, revs
 
 use super::super::{RepoWindow, picker};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::input::LineInput;
 use crate::ui::navigation::{ListNavKeys, list_nav_from_key, move_index};
 
@@ -85,8 +85,8 @@ pub(crate) fn render_revset_completions(
         .flex()
         .flex_col()
         .w(bar.size.width)
-        .max_h(px(176.))
-        .py(px(4.))
+        .max_h(ui_size(176.))
+        .py(ui_size(4.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
@@ -118,7 +118,7 @@ pub(super) fn completion_row(
     on_pick: impl Fn(&mut App) + 'static,
 ) -> AnyElement {
     picker::row(format!("revset-completion-{index}"), selected, 24., t)
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .cursor_pointer()
         .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
             cx.stop_propagation();
@@ -132,7 +132,7 @@ pub(super) fn completion_row(
         )
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(match entry.kind {
                     RevsetCompletionKind::Function => jayjay_i18n::repo::function(),

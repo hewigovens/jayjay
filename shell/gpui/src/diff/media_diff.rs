@@ -1,12 +1,12 @@
 use gpui::{
     AnyElement, Div, ImageSource, Img, InteractiveElement, IntoElement, ObjectFit, ParentElement,
-    SharedString, Styled, StyledImage, div, img, px, rgb,
+    SharedString, Styled, StyledImage, div, img, rgb,
 };
 use jayjay_core::HunkType;
 use jayjay_core::diff::DiffSide;
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::line::gutter_column;
 
 pub(crate) fn media_diff_layout<F>(hunk_type: HunkType, t: &Theme, pane: F) -> AnyElement
@@ -52,9 +52,9 @@ where
             .flex_1()
             .min_w_0()
             .min_h_0()
-            .gap(px(12.))
-            .px(px(16.))
-            .py(px(16.))
+            .gap(ui_size(12.))
+            .px(ui_size(16.))
+            .py(ui_size(16.))
             .bg(rgb(t.detail_bg))
             .child(pane(
                 DiffSide::Old,
@@ -97,8 +97,8 @@ pub(crate) fn single_pane_layout(pane: AnyElement, t: &Theme) -> AnyElement {
         .flex_1()
         .min_w_0()
         .min_h_0()
-        .px(px(16.))
-        .py(px(16.))
+        .px(ui_size(16.))
+        .py(ui_size(16.))
         .bg(rgb(t.detail_bg))
         .child(pane)
         .into_any_element()
@@ -150,7 +150,7 @@ pub(crate) fn media_pane(
         .min_w_0()
         .min_h_0()
         .items_center()
-        .gap(px(8.));
+        .gap(ui_size(8.));
     if show_label {
         pane = pane.child(crate::ui::primitives::capsule(
             label, label_bg, label_fg, 11.,

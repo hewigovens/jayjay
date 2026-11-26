@@ -16,7 +16,7 @@ use super::row::{
     file_row_height, file_text_content, file_text_limits, finish_file_row, review_checkbox, row_bg,
     row_separator,
 };
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
@@ -98,7 +98,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
     } = state;
     let count = visible_indices.len();
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
-    let text_px = (column_width - fixed_chrome).max(80.0);
+    let text_px = (column_width - theme.scaled_font_size(fixed_chrome)).max(80.0);
     let (basename_chars, path_chars) = file_text_limits(text_px, &theme);
     let list = uniform_list(
         "files-flat",
@@ -231,9 +231,9 @@ where
         .items_center()
         .w_full()
         .h(px(file_row_height(theme)))
-        .gap(px(8.))
-        .mx(px(4.))
-        .px(px(6.))
+        .gap(ui_size(8.))
+        .mx(ui_size(4.))
+        .px(ui_size(6.))
         .rounded_md()
         .bg(bg_row)
         .relative()

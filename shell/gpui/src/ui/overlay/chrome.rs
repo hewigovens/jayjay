@@ -1,10 +1,10 @@
 use gpui::{
     Div, FontWeight, InteractiveElement, IntoElement, MouseButton, MouseDownEvent, ParentElement,
-    SharedString, Styled, div, px, rgb, rgba,
+    SharedString, Styled, div, rgb, rgba,
 };
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::icon_label;
 
 /// Dimmed, occluding full-window layer. Centers its child; callers add the card or sheet.
@@ -28,11 +28,11 @@ pub(crate) fn overlay_card(t: &Theme, width: f32) -> Div {
     div()
         .flex()
         .flex_col()
-        .gap(px(12.))
-        .w(px(width))
+        .gap(ui_size(12.))
+        .w(ui_size(width))
         .max_w_full()
-        .px(px(18.))
-        .py(px(16.))
+        .px(ui_size(18.))
+        .py(ui_size(16.))
         .rounded_lg()
         .border_1()
         .border_color(rgb(t.border))
@@ -48,14 +48,14 @@ pub(crate) fn confirmation_card(
         .debug_selector(|| "confirmation".to_owned())
         .child(
             div()
-                .text_size(ui_font_size(14.))
+                .text_size(ui_size(14.))
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child(title.into()),
         )
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .whitespace_normal()
                 .child(message.into()),
@@ -70,13 +70,18 @@ pub(crate) fn overlay_header(
     t: &Theme,
 ) -> Div {
     let subtitle = subtitle.into();
-    let mut row = div().flex().flex_row().items_center().gap(px(12.)).child(
-        icon_label(icon, title, 16., icon_color)
-            .flex_none()
-            .text_size(ui_font_size(14.))
-            .font_weight(FontWeight::SEMIBOLD)
-            .text_color(rgb(t.fg)),
-    );
+    let mut row = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(ui_size(12.))
+        .child(
+            icon_label(icon, title, 16., icon_color)
+                .flex_none()
+                .text_size(ui_size(14.))
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(rgb(t.fg)),
+        );
     if !subtitle.is_empty() {
         row = row.child(div().flex_1()).child(
             div()
@@ -96,7 +101,7 @@ pub(crate) fn overlay_actions(cancel: impl IntoElement, primary: impl IntoElemen
         .flex()
         .flex_row()
         .justify_end()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(cancel)
         .child(primary)
 }

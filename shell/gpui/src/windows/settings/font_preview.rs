@@ -8,7 +8,7 @@ use jayjay_core::diff::DiffLine;
 use jayjay_core::{FontSpecimen, SpecimenChange, SpecimenFile};
 
 use crate::app::fonts::{self, CodeText as _};
-use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_font_size};
+use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_size};
 use crate::diff::file_status;
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::repo::window::ref_chips;
@@ -51,12 +51,12 @@ pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(10.))
-        .p(px(16.))
+        .gap(ui_size(10.))
+        .p(ui_size(16.))
         .rounded_lg()
         .child(
             div()
-                .text_size(ui_font_size(FONT_BODY))
+                .text_size(ui_size(FONT_BODY))
                 .font_weight(FontWeight::SEMIBOLD)
                 .child(SharedString::from(specimen.summary.clone())),
         )
@@ -64,7 +64,7 @@ pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
             div()
                 .flex()
                 .flex_row()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .items_baseline()
                 .child(
                     div()
@@ -75,7 +75,7 @@ pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
                 .child(
                     div()
                         .flex()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .child(
                             div()
                                 .text_color(rgb(t.fg_dim))
@@ -93,7 +93,7 @@ pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
                 .flex()
                 .flex_col()
                 .w_full()
-                .py(px(6.))
+                .py(ui_size(6.))
                 .rounded_md()
                 .bg(rgb(t.diff_context_bg))
                 .overflow_hidden()
@@ -123,7 +123,7 @@ pub(super) fn theme_preview(pt: &Theme, cx: &App) -> AnyElement {
         .flex()
         .flex_col()
         .w_full()
-        .rounded(px(8.))
+        .rounded(ui_size(8.))
         .overflow_hidden()
         .border_1()
         .border_color(rgb(pt.border))
@@ -134,19 +134,26 @@ pub(super) fn theme_preview(pt: &Theme, cx: &App) -> AnyElement {
                 .flex()
                 .flex_col()
                 .w_full()
-                .py(px(4.))
+                .py(ui_size(4.))
                 .bg(rgb(pt.sidebar_bg))
                 .children(changes),
         )
-        .child(div().h(px(1.)).w_full().bg(rgb(pt.border)))
-        .child(div().flex().flex_col().w_full().py(px(4.)).children(files))
         .child(div().h(px(1.)).w_full().bg(rgb(pt.border)))
         .child(
             div()
                 .flex()
                 .flex_col()
                 .w_full()
-                .py(px(4.))
+                .py(ui_size(4.))
+                .children(files),
+        )
+        .child(div().h(px(1.)).w_full().bg(rgb(pt.border)))
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .w_full()
+                .py(ui_size(4.))
                 .bg(rgb(pt.diff_context_bg))
                 .overflow_hidden()
                 .children(diff_rows),
@@ -159,7 +166,7 @@ fn specimen_change_row(change: &SpecimenChange, ix: usize, count: usize, pt: &Th
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(5.))
+        .gap(ui_size(5.))
         .child(id_cell(
             &change.change_id.id,
             change.change_id.short_len,
@@ -184,7 +191,7 @@ fn specimen_change_row(change: &SpecimenChange, ix: usize, count: usize, pt: &Th
             .flex_1()
             .min_w_0()
             .truncate()
-            .text_size(ui_font_size(12.))
+            .text_size(ui_size(12.))
             .font_weight(if change.is_working_copy {
                 FontWeight::MEDIUM
             } else {
@@ -200,8 +207,8 @@ fn specimen_change_row(change: &SpecimenChange, ix: usize, count: usize, pt: &Th
         .items_center()
         .w_full()
         .h(px(pt.scaled_control_height(26., 12.)))
-        .px(px(10.))
-        .gap(px(8.));
+        .px(ui_size(10.))
+        .gap(ui_size(8.));
     if ix == 0 {
         row = row.bg(rgb(pt.selected_bg));
     }
@@ -224,7 +231,7 @@ fn specimen_change_row(change: &SpecimenChange, ix: usize, count: usize, pt: &Th
 
 fn specimen_graph_lane(has_top: bool, has_bottom: bool, node: DagNodeStyle, pt: &Theme) -> Div {
     let line = pt.dag_line;
-    div().flex_none().w(px(14.)).h_full().child(
+    div().flex_none().w(ui_size(14.)).h_full().child(
         canvas(
             |_, _, _| (),
             move |bounds, _, window, _| {
@@ -269,8 +276,8 @@ fn specimen_file_row(file: &SpecimenFile, is_selected: bool, pt: &Theme) -> Div 
         .items_center()
         .w_full()
         .h(px(pt.scaled_control_height(24., 12.)))
-        .px(px(10.))
-        .gap(px(8.));
+        .px(ui_size(10.))
+        .gap(ui_size(8.));
     if is_selected {
         row = row.bg(rgb(pt.selected_bg));
     }
@@ -281,7 +288,7 @@ fn specimen_file_row(file: &SpecimenFile, is_selected: bool, pt: &Theme) -> Div 
                 .flex_row()
                 .flex_1()
                 .min_w_0()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .child(
                     div()
                         .text_color(rgb(pt.fg_dim))

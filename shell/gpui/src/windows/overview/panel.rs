@@ -1,13 +1,13 @@
 use gpui::{
     AnyElement, AppContext, ClickEvent, Context, Entity, FontWeight, InteractiveElement,
-    IntoElement, ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    IntoElement, ParentElement, SharedString, StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::{FileDiffStats, OverviewChange};
 
 use super::OverviewView;
 use super::canvas::description_color;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::{compact_id, format_relative};
 use crate::ui::icons::glyph;
 use crate::ui::loading::loading_label;
@@ -87,7 +87,7 @@ impl OverviewView {
             div()
                 .flex()
                 .flex_row()
-                .gap(px(4.))
+                .gap(ui_size(4.))
                 .children(
                     change
                         .workspaces
@@ -108,7 +108,7 @@ impl OverviewView {
             div()
                 .id("overview-panel-body")
                 .debug_selector(|| "overview-panel-body".to_owned())
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(body)
                 .into_any_element()
@@ -147,7 +147,7 @@ pub(super) fn panel_frame(
         .id(id)
         .debug_selector(move || id.to_owned())
         .flex_none()
-        .w(px(400.))
+        .w(ui_size(400.))
         .h_full()
         .overflow_y_scroll()
         .border_l_1()
@@ -157,8 +157,8 @@ pub(super) fn panel_frame(
             div()
                 .flex()
                 .flex_col()
-                .gap(px(14.))
-                .p(px(16.))
+                .gap(ui_size(14.))
+                .p(ui_size(16.))
                 .children(sections),
         )
         .into_any_element()
@@ -174,12 +174,12 @@ pub(super) fn panel_header(
         .flex()
         .flex_row()
         .items_start()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             title
                 .flex_1()
                 .min_w_0()
-                .text_size(ui_font_size(13.))
+                .text_size(ui_size(13.))
                 .font_weight(FontWeight::SEMIBOLD),
         )
         .child(
@@ -208,7 +208,7 @@ pub(super) fn panel_actions(buttons: impl IntoIterator<Item = AnyElement>) -> An
         .flex()
         .flex_row()
         .flex_wrap()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .children(buttons)
         .into_any_element()
 }
@@ -219,8 +219,8 @@ pub(super) fn panel_meta(parts: impl IntoIterator<Item = (String, u32)>, t: &The
         .flex_row()
         .flex_wrap()
         .items_center()
-        .gap(px(5.))
-        .text_size(ui_font_size(11.));
+        .gap(ui_size(5.))
+        .text_size(ui_size(11.));
     for (ix, (text, color)) in parts.into_iter().enumerate() {
         if ix > 0 {
             row = row.child(div().text_color(rgb(t.fg_faint)).child("·"));
@@ -232,7 +232,7 @@ pub(super) fn panel_meta(parts: impl IntoIterator<Item = (String, u32)>, t: &The
 
 pub(super) fn note(text: impl Into<SharedString>, color: u32) -> gpui::Div {
     div()
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(color))
         .child(text.into())
 }
@@ -245,7 +245,7 @@ pub(super) fn section(
     div()
         .flex()
         .flex_col()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .child(section_title(title, t))
         .children(rows)
         .into_any_element()
@@ -253,7 +253,7 @@ pub(super) fn section(
 
 fn section_title(title: impl Into<SharedString>, t: &Theme) -> gpui::Div {
     div()
-        .text_size(ui_font_size(10.))
+        .text_size(ui_size(10.))
         .font_weight(FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_faint))
         .child(title.into())
@@ -265,7 +265,7 @@ pub(super) fn file_list(
 ) -> AnyElement {
     let note = |text: String| {
         div()
-            .text_size(ui_font_size(11.))
+            .text_size(ui_size(11.))
             .text_color(rgb(t.fg_faint))
             .child(text)
             .into_any_element()
@@ -278,7 +278,7 @@ pub(super) fn file_list(
         Some(Err(error)) => {
             return div()
                 .debug_selector(|| "overview-files-error".to_owned())
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.error_fg))
                 .child(error.clone())
                 .into_any_element();
@@ -292,7 +292,7 @@ pub(super) fn file_list(
     div()
         .flex()
         .flex_col()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .child(section_title(
             jayjay_i18n::repo::file_count(count).to_uppercase(),
             t,
@@ -302,12 +302,12 @@ pub(super) fn file_list(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .child(
                     div()
                         .flex_1()
                         .min_w_0()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg))
                         .whitespace_nowrap()
                         .overflow_hidden()

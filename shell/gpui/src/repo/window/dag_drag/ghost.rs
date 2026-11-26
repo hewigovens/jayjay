@@ -1,10 +1,9 @@
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Render, SharedString, Styled, Window, div, px,
-    rgb,
+    AnyElement, Context, IntoElement, ParentElement, Render, SharedString, Styled, Window, div, rgb,
 };
 
 use super::payload::DagDrag;
-use crate::app::theme::{FONT_META, FONT_TAG, ui_font_size};
+use crate::app::theme::{FONT_META, FONT_TAG, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{capsule, icon_chip, icon_label};
 
@@ -42,20 +41,20 @@ impl Render for DagDragGhost {
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(6.))
-                .px(px(12.))
-                .py(px(8.))
+                .gap(ui_size(6.))
+                .px(ui_size(12.))
+                .py(ui_size(8.))
                 .rounded_full()
                 .border_1()
                 .border_color(rgb(t.toggle_active_bg))
                 .bg(rgb(t.header_bg))
-                .text_size(ui_font_size(FONT_META))
+                .text_size(ui_size(FONT_META))
                 .text_color(rgb(t.fg))
                 .opacity(0.92)
                 .child(icon_label(
                     glyph::ARROW_UP,
                     SharedString::from(self.drag.source_label()),
-                    t.scaled_font_size(12.),
+                    12.,
                     t.selected_accent,
                 ))
                 .into_any_element(),

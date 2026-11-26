@@ -134,3 +134,17 @@ fn only_the_side_panels_take_the_navigation_surface() {
     assert_ne!(plain.sidebar_row_alt_bg, tinted.sidebar_row_alt_bg);
     assert_ne!(plain.sidebar_row_border, tinted.sidebar_row_border);
 }
+
+#[test]
+fn zooming_below_the_default_size_shrinks_controls_and_code_lines() {
+    let config = crate::app::config::AppConfig {
+        interface_font_size: Some(crate::app::config::AppConfig::MIN_FONT_SIZE),
+        code_font_size: crate::app::config::AppConfig::MIN_FONT_SIZE,
+        ..Default::default()
+    };
+    let small = Theme::light().with_typography(&config);
+    let default = Theme::light();
+    assert!(small.scaled_control_height(22., 11.) < default.scaled_control_height(22., 11.));
+    assert!(small.code_line_height() < default.code_line_height());
+    assert_eq!(default.code_line_height(), 18.);
+}

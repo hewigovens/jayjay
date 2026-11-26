@@ -9,7 +9,7 @@ use jayjay_i18n::{common, settings};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::repo::RepoWindow;
 use crate::ui::primitives::button;
 use crate::ui::text_area::{Newline, TextArea};
@@ -217,13 +217,13 @@ impl Render for IdentityDialog {
             .flex()
             .flex_col()
             .size_full()
-            .gap(px(10.))
-            .p(px(20.))
+            .gap(ui_size(10.))
+            .p(ui_size(20.))
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
             .child(
                 div()
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .text_color(rgb(t.fg_dim))
                     .child(settings::identity_detail()),
             )
@@ -234,7 +234,7 @@ impl Render for IdentityDialog {
                     div()
                         .truncate()
                         .code_font()
-                        .text_size(ui_font_size(10.))
+                        .text_size(ui_size(10.))
                         .text_color(rgb(t.fg_faint))
                         .child(path),
                 )
@@ -242,7 +242,7 @@ impl Render for IdentityDialog {
             .when_some(self.error.clone(), |root, error| {
                 root.child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.error_fg))
                         .child(error),
                 )
@@ -253,7 +253,7 @@ impl Render for IdentityDialog {
                     .flex()
                     .flex_row()
                     .justify_end()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         button("identity-cancel", common::cancel(), &t, false)
                             .on_click(cx.listener(|_, _, window, _| window.remove_window())),

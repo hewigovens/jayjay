@@ -11,7 +11,7 @@ mod rows;
 
 use super::picker::{self, PickerOutcome, PickerQuery, picker_actions, picker_items};
 use super::{PanelBoundsSlot, RepoWindow};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::LineInput;
 use rows::{bookmark_row, bookmark_sections};
@@ -225,11 +225,11 @@ pub(crate) fn bookmarks_header_button(
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .h(px(t.scaled_control_height(26., 12.)))
-        .px(px(6.))
+        .px(ui_size(6.))
         .rounded_md()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .font_weight(gpui::FontWeight::MEDIUM)
         .text_color(rgb(t.fg))
         .cursor_pointer()
@@ -253,10 +253,10 @@ pub(crate) fn bookmarks_header_button(
     if count > 0 {
         button = button.child(
             div()
-                .px(px(5.))
+                .px(ui_size(5.))
                 .rounded_full()
                 .bg(rgb(t.toggle_inactive_bg))
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .font_weight(gpui::FontWeight::NORMAL)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(count.to_string())),

@@ -1,4 +1,5 @@
-use gpui::{AnyElement, App, IntoElement, RenderImage, Styled, img, px};
+use crate::app::theme::ui_size;
+use gpui::{AnyElement, App, IntoElement, RenderImage, Styled, img};
 use jayjay_core::flock::FlockIcon;
 use std::sync::Arc;
 
@@ -44,7 +45,7 @@ impl Artwork {
         let (_, light_image, dark_image) = self.birds.iter().find(|(bird, ..)| *bird == icon)?;
         Some(
             img(if dark { dark_image } else { light_image }.clone())
-                .size(px(size))
+                .size(ui_size(size))
                 .into_any_element(),
         )
     }

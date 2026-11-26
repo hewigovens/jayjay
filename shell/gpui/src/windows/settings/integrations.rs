@@ -1,8 +1,8 @@
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
 
 use super::{SettingsView, cli, forges, tools};
 use crate::app::config::AppConfig;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 
 pub(super) fn integrations_section(
     view: &SettingsView,
@@ -14,7 +14,7 @@ pub(super) fn integrations_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .child(tools::tool_sections(
             cfg,
             view.ai_tools.as_ref(),

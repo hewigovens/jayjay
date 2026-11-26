@@ -4,7 +4,7 @@ mod model;
 
 use gpui::{
     AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    SharedString, StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::{JjConfigEntry, JjConfigSection, UserIdentity};
 use jayjay_i18n::{common, settings};
@@ -15,7 +15,7 @@ use super::shared::{
     row_container,
 };
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::loading::loading_label;
 use crate::ui::primitives::button;
@@ -57,14 +57,14 @@ pub(super) fn jujutsu_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.));
+        .gap(ui_size(24.));
 
     if loading {
         return root
             .child(
                 loading_label(settings::loading_config(), t)
                     .debug_selector(|| "jj-config-status".to_owned())
-                    .py(px(8.)),
+                    .py(ui_size(8.)),
             )
             .into_any_element();
     }
@@ -150,14 +150,14 @@ fn config_path_row(
 ) -> AnyElement {
     row_container()
         .debug_selector(|| "jj-config-path-row".to_owned())
-        .py(px(6.))
+        .py(ui_size(6.))
         .child(
             div()
                 .flex_1()
                 .min_w_0()
                 .truncate()
                 .code_font()
-                .text_size(ui_font_size(DETAIL_FONT_SIZE))
+                .text_size(ui_size(DETAIL_FONT_SIZE))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(path.to_owned())),
         )
@@ -197,11 +197,11 @@ fn status_message(message: &str, t: &Theme) -> AnyElement {
     div()
         .debug_selector(|| "jj-config-status".to_owned())
         .w_full()
-        .px(px(8.))
-        .py(px(8.))
+        .px(ui_size(8.))
+        .py(ui_size(8.))
         .rounded_sm()
         .bg(rgb(t.row_alt_bg))
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(message.to_owned()))
         .into_any_element()
@@ -210,11 +210,11 @@ fn status_message(message: &str, t: &Theme) -> AnyElement {
 fn open_button(path: String, t: &Theme) -> AnyElement {
     div()
         .id(SharedString::from("jj-config-open"))
-        .px(px(10.))
-        .py(px(4.))
+        .px(ui_size(10.))
+        .py(ui_size(4.))
         .rounded_md()
         .bg(rgb(t.toggle_inactive_bg))
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.toggle_inactive_fg))
         .cursor_pointer()
         .hover(|style| style.bg(rgb(t.row_alt_bg)))

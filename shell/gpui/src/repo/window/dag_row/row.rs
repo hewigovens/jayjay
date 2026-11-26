@@ -10,7 +10,7 @@ use jayjay_core::{BisectVerdict, BookmarkInfo, ChangeInfo, GraphEntry};
 
 use super::chips::tags_row;
 use super::text::{compact_id, first_line, format_relative, id_cell};
-use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_font_size};
+use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_size};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost, DagDragSelection};
 use crate::ui::primitives::HelpTag;
@@ -145,7 +145,7 @@ where
         div()
             .flex()
             .flex_col()
-            .gap(px(DAG_ROW_GAP))
+            .gap(px(t.scaled_font_size(DAG_ROW_GAP)))
             .pr_3()
             .py_2()
             .flex_1()
@@ -210,13 +210,13 @@ fn summary_with_badge(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .child(
             div()
-                .px(px(5.))
+                .px(ui_size(5.))
                 .rounded_sm()
                 .bg(rgb(bg))
-                .text_size(ui_font_size(FONT_TAG))
+                .text_size(ui_size(FONT_TAG))
                 .text_color(rgb(fg))
                 .child(label),
         )
@@ -227,7 +227,7 @@ fn summary_with_badge(
 fn summary_line(change: &ChangeInfo, summary: &str, row_ix: usize, t: &Theme) -> impl IntoElement {
     if summary.is_empty() {
         div()
-            .text_size(ui_font_size(FONT_BODY))
+            .text_size(ui_size(FONT_BODY))
             .text_color(rgb(t.fg_faint))
             .truncate()
             .child(jayjay_i18n::repo::no_description_placeholder())
@@ -236,7 +236,7 @@ fn summary_line(change: &ChangeInfo, summary: &str, row_ix: usize, t: &Theme) ->
         div()
             .id(("summary", row_ix))
             .debug_selector(move || format!("dag-summary-{row_ix}"))
-            .text_size(ui_font_size(FONT_BODY))
+            .text_size(ui_size(FONT_BODY))
             .font_weight(gpui::FontWeight::MEDIUM)
             .text_color(rgb(t.fg))
             .line_clamp(2)
@@ -253,8 +253,8 @@ fn meta_row(change: &ChangeInfo, row_ix: usize, t: &Theme) -> impl IntoElement {
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
-        .text_size(ui_font_size(FONT_ID))
+        .gap(ui_size(6.))
+        .text_size(ui_size(FONT_ID))
         .text_color(rgb(t.fg_dim))
         .child(id_cell(
             &commit_id,
@@ -300,8 +300,8 @@ fn dag_row_height(t: &Theme) -> f32 {
         .max(14.);
     2. * row_vertical_padding(t)
         + refs_row_height(t)
-        + DAG_ROW_GAP
+        + t.scaled_font_size(DAG_ROW_GAP)
         + 2. * t.scaled_font_size(FONT_BODY) * DAG_LINE_HEIGHT
-        + DAG_ROW_GAP
+        + t.scaled_font_size(DAG_ROW_GAP)
         + meta_height
 }

@@ -2,7 +2,9 @@
 //!
 //! Use `icon(glyph)` to render an icon span; pass `glyph::COPY` etc.
 
-use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{Div, ParentElement, SharedString, Styled, div, rgb};
+
+use crate::app::theme::ui_size;
 
 const FONT: &str = "Octicons";
 pub(crate) const SETI_FONT: &str = "seti";
@@ -221,7 +223,7 @@ pub(crate) fn icon(glyph_str: &'static str, size: f32, color: u32) -> Div {
     div()
         .flex_none()
         .font_family(FONT)
-        .text_size(px(size))
+        .text_size(ui_size(size))
         .text_color(rgb(color))
         .child(SharedString::from(glyph_str))
 }

@@ -16,7 +16,7 @@ pub(crate) use self::controls::{
 pub(crate) use self::path::file_icon_width;
 use self::path::*;
 pub(crate) use self::path::{file_icon, file_path_label, source_path_label};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::diff::line::tag_for_hunk_type;
 use crate::diff::line_stats;
 use crate::diff::projection::{self, ProjectionView};
@@ -82,8 +82,8 @@ pub(super) fn file_header(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
-        .px(px(DETAIL_INSET))
+        .gap(ui_size(6.))
+        .px(ui_size(DETAIL_INSET))
         .h(px(crate::diff::file_column::file_row_height(t)))
         .debug_selector(|| "diff-header".to_owned())
         .bg(rgb(t.header_bg))
@@ -114,7 +114,7 @@ pub(super) fn file_header(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
+        .gap(ui_size(6.))
         .flex_1()
         .min_w_0()
         .child(file_path_label(
@@ -152,7 +152,7 @@ pub(super) fn file_header(
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(2.));
+        .gap(ui_size(2.));
     if state.is_annotating {
         actions = actions.child(exit_annotate_button(t, cx));
     }
@@ -220,12 +220,12 @@ pub(crate) fn hunk_status_pill(hunk_type: HunkType, t: &Theme) -> impl IntoEleme
         .flex_none()
         .relative()
         .top(on_path_baseline(PILL_FONT_SIZE, t))
-        .px(px(7.))
-        .py(px(1.))
+        .px(ui_size(7.))
+        .py(ui_size(1.))
         .rounded_full()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(ui_font_size(PILL_FONT_SIZE))
+        .text_size(ui_size(PILL_FONT_SIZE))
         .font_weight(FontWeight::MEDIUM)
         .child(SharedString::from(label))
 }

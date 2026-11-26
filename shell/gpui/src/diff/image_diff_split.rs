@@ -36,6 +36,8 @@ impl ImageDiffSplit {
         );
         let fraction = state.read(cx).fraction;
         let down_state = state.clone();
+        let padding = theme.scaled_font_size(Self::PADDING);
+        let divider_width = theme.scaled_font_size(Self::DIVIDER_WIDTH);
         div()
             .relative()
             .flex()
@@ -43,7 +45,7 @@ impl ImageDiffSplit {
             .flex_1()
             .min_w_0()
             .min_h_0()
-            .p(px(Self::PADDING))
+            .p(px(padding))
             .bg(rgb(theme.detail_bg))
             .child(
                 div()
@@ -59,7 +61,7 @@ impl ImageDiffSplit {
                 div()
                     .id("image-comparison-divider")
                     .flex_none()
-                    .w(px(Self::DIVIDER_WIDTH))
+                    .w(px(divider_width))
                     .h_full()
                     .flex()
                     .justify_center()
@@ -89,8 +91,7 @@ impl ImageDiffSplit {
                 canvas(
                     |_, _, _| (),
                     move |bounds, _, window, _| {
-                        let width =
-                            f32::from(bounds.size.width) - 2. * Self::PADDING - Self::DIVIDER_WIDTH;
+                        let width = f32::from(bounds.size.width) - 2. * padding - divider_width;
                         let move_state = state.clone();
                         window.on_mouse_event(move |event: &MouseMoveEvent, phase, _, cx| {
                             if phase != DispatchPhase::Bubble || !event.dragging() || width <= 0. {

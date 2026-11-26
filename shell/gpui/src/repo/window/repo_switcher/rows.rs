@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, Styled, div, px, rgb,
+    ParentElement, Styled, div, rgb,
 };
 use std::path::Path;
 
@@ -10,7 +10,7 @@ use jayjay_core::repositories::normalize_repository_path;
 use super::model::RepoSwitcherAction;
 use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
-use crate::app::theme::{FONT_ID, Theme, ui_font_size};
+use crate::app::theme::{FONT_ID, Theme, ui_size};
 use crate::repo::window::picker::row;
 use crate::repo::window::workspace_menu::workspace_menu_items;
 use crate::repo::window::{RepoWindow, compact_id, format_relative, id_cell};
@@ -75,8 +75,8 @@ pub(super) fn switcher_row(
                 .into_any_element()
         }
         RowContent::Action { label, glyph } => element
-            .gap(px(5.))
-            .text_size(ui_font_size(13.))
+            .gap(ui_size(5.))
+            .text_size(ui_size(13.))
             .child(icons::icon(glyph, 11., t.fg_dim))
             .child(label)
             .into_any_element(),
@@ -125,13 +125,13 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
         .min_w_0()
         .flex_1()
         .flex_col()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .child(
             div()
                 .flex()
                 .items_center()
                 .min_w_0()
-                .gap(px(5.))
+                .gap(ui_size(5.))
                 .child(icons::icon(
                     if workspace.is_current {
                         glyph::CHECK
@@ -147,7 +147,7 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                 ))
                 .child(
                     div()
-                        .text_size(ui_font_size(13.))
+                        .text_size(ui_size(13.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .child(format!("{}:", workspace.name)),
                 )
@@ -170,7 +170,7 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                 .child(
                     div()
                         .flex_none()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(format_relative(workspace.timestamp)),
                 ),
@@ -180,21 +180,21 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                 .flex()
                 .items_center()
                 .min_w_0()
-                .pl(px(19.))
-                .gap(px(6.))
+                .pl(ui_size(19.))
+                .gap(ui_size(6.))
                 .child(
                     div()
                         .min_w_0()
                         .flex_1()
                         .truncate()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(description_color))
                         .child(description),
                 )
                 .children(file_label.map(|label| {
                     div()
                         .flex_none()
-                        .text_size(ui_font_size(10.))
+                        .text_size(ui_size(10.))
                         .text_color(rgb(t.fg_dim))
                         .child(label)
                 })),
@@ -208,7 +208,7 @@ fn repository_row(path: String, glyph: &'static str, current: bool, t: &Theme) -
         .items_center()
         .min_w_0()
         .flex_1()
-        .gap(px(5.))
+        .gap(ui_size(5.))
         .child(icons::icon(
             glyph,
             11.,
@@ -218,15 +218,15 @@ fn repository_row(path: String, glyph: &'static str, current: bool, t: &Theme) -
             div()
                 .min_w_0()
                 .truncate()
-                .text_size(ui_font_size(13.))
+                .text_size(ui_size(13.))
                 .child(repositories::repository_name(&path)),
         )
         .child(div().flex_1())
         .child(
             div()
-                .max_w(px(130.))
+                .max_w(ui_size(130.))
                 .truncate()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .text_color(rgb(t.fg_faint))
                 .child(path),
         )

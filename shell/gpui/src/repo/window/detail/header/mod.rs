@@ -5,14 +5,14 @@ mod metadata;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div, px, rgb,
+    AnyElement, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div, rgb,
 };
 use jayjay_core::compare::CompareState;
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
 use super::DescriptionState;
 use super::description::description_block;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::RepoWindow;
 use crate::repo::window::FocusStop;
 use compare::compare_banner;
@@ -60,9 +60,9 @@ pub(super) fn detail_header(
     div()
         .flex()
         .flex_col()
-        .gap(px(if expanded { 12. } else { 0. }))
+        .gap(ui_size(if expanded { 12. } else { 0. }))
         .min_h_0()
-        .pb(px(if expanded { 18. } else { 0. }))
+        .pb(ui_size(if expanded { 18. } else { 0. }))
         .bg(rgb(t.detail_bg))
         // Collapsed, the byline row draws the rule inside its fixed height; an auto-height box would add the border below.
         .when(expanded, |el| el.border_b_1().border_color(rgb(t.border)))

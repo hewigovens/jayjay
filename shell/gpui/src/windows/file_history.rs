@@ -13,7 +13,7 @@ use jayjay_core::{ChangeInfo, DiffHunk, Repo};
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{RepoWindow, compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
@@ -385,9 +385,9 @@ fn header(
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(8.))
-                .px(px(16.))
-                .pt(px(10.))
+                .gap(ui_size(8.))
+                .px(ui_size(16.))
+                .pt(ui_size(10.))
                 .child(icons::icon(glyph::FILE_CODE, 14., t.fg_dim))
                 .child(
                     div()
@@ -398,7 +398,7 @@ fn header(
                 .child(div().flex_1())
                 .child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(revisions)),
                 ),
@@ -416,9 +416,9 @@ fn comparison_bar(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(16.))
-        .py(px(8.));
+        .gap(ui_size(8.))
+        .px(ui_size(16.))
+        .py(ui_size(8.));
     if let Some(base) = view.comparison.base() {
         bar = bar
             .child(endpoint_label(
@@ -454,7 +454,7 @@ fn comparison_bar(
     } else {
         bar = bar.child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::repo::select_a_revision()),
         );
@@ -504,11 +504,11 @@ fn endpoint_label(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(4.))
+        .gap(ui_size(4.))
         .help(help)
         .child(
             div()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(color))
                 .child(role.to_owned()),
@@ -636,9 +636,9 @@ fn history_row(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(2.))
-        .px(px(16.))
-        .py(px(10.))
+        .gap(ui_size(2.))
+        .px(ui_size(16.))
+        .py(ui_size(10.))
         .border_b_1()
         .border_color(rgb(t.row_border))
         .cursor_pointer()
@@ -671,7 +671,7 @@ fn history_row(
             .flex()
             .flex_row()
             .items_baseline()
-            .gap(px(8.))
+            .gap(ui_size(8.))
             .child(id_cell(
                 &short_id,
                 entry.change_id.short_len,
@@ -681,7 +681,7 @@ fn history_row(
             ))
             .child(
                 div()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(SharedString::from(author)),
             )
@@ -689,7 +689,7 @@ fn history_row(
             .children(role.map(|(label, fg, bg)| capsule(label, bg, fg, 9.)))
             .child(
                 div()
-                    .text_size(ui_font_size(10.))
+                    .text_size(ui_size(10.))
                     .text_color(rgb(t.fg_faint))
                     .child(SharedString::from(when)),
             ),
@@ -698,7 +698,7 @@ fn history_row(
         div()
             .w_full()
             .truncate()
-            .text_size(ui_font_size(12.))
+            .text_size(ui_size(12.))
             .text_color(rgb(t.fg))
             .child(SharedString::from(description)),
     )

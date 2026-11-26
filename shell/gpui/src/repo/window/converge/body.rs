@@ -1,13 +1,13 @@
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, Styled, div,
-    px, rgb,
+    rgb,
 };
 use jayjay_core::ChangeInfo;
 use jayjay_core::converge::{ConvergeItem, ConvergeReview};
 
 use super::render::{caption, heading};
 use super::sheet::ConvergeSheet;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::{RepoWindow, compact_id, id_cell};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
@@ -61,8 +61,8 @@ impl<'a> ConvergeBody<'a> {
         div()
             .flex()
             .items_center()
-            .gap(px(12.))
-            .pb(px(10.))
+            .gap(ui_size(12.))
+            .pb(ui_size(10.))
             .border_b_1()
             .border_color(rgb(t.border))
             .child(id_cell(id, *short_len, t.change_id_prefix, 12., t))
@@ -74,7 +74,7 @@ impl<'a> ConvergeBody<'a> {
             .child(
                 icon_label(glyph, label, 11., color)
                     .debug_selector(move || selector.to_owned())
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_color(rgb(color)),
             )

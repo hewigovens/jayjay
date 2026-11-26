@@ -6,7 +6,7 @@ use jayjay_core::MergeHunkSource;
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::merge_editor::{
     merge_base_toggle, merge_hunk_action_links, merge_hunk_card, merge_result_mode_button,
     merge_source_panel, merge_source_row,
@@ -92,21 +92,21 @@ impl ExternalToolWindow {
                     .debug_selector(|| "external-sources".to_owned())
                     .flex()
                     .items_center()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .h(px(t.scaled_control_height(36., 12.)))
-                    .px(px(12.))
+                    .px(ui_size(12.))
                     .bg(rgb(t.header_bg))
                     .border_b_1()
                     .border_color(rgb(t.border))
                     .child(
                         div()
-                            .text_size(ui_font_size(12.))
+                            .text_size(ui_size(12.))
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child(jayjay_i18n::repo::sources()),
                     )
                     .child(
                         div()
-                            .text_size(ui_font_size(11.))
+                            .text_size(ui_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(jayjay_i18n::repo::use_a_complete_side_as_the()),
                     )
@@ -124,15 +124,15 @@ impl ExternalToolWindow {
                     .debug_selector(|| "external-result-section".to_owned())
                     .flex()
                     .items_center()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .h(px(t.scaled_control_height(36., 12.)))
-                    .px(px(12.))
+                    .px(ui_size(12.))
                     .bg(rgb(t.header_bg))
                     .border_b_1()
                     .border_color(rgb(t.border))
                     .child(
                         div()
-                            .text_size(ui_font_size(12.))
+                            .text_size(ui_size(12.))
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child(jayjay_i18n::repo::result()),
                     )
@@ -162,14 +162,14 @@ impl ExternalToolWindow {
                         div()
                             .min_w_0()
                             .truncate()
-                            .text_size(ui_font_size(11.))
+                            .text_size(ui_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(path),
                     )
                     .child(div().flex_1())
                     .child(
                         div()
-                            .text_size(ui_font_size(11.))
+                            .text_size(ui_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(if raw {
                                 result_label.to_owned()

@@ -5,7 +5,7 @@ use gpui::{
 
 use crate::app::config;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{boolean_toggle_button, icon_button};
 
@@ -24,11 +24,11 @@ pub(super) fn form_section(
         .flex_col()
         .w_full()
         .min_w_0()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             div()
-                .px(px(12.))
-                .text_size(ui_font_size(12.))
+                .px(ui_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg_dim))
                 .child(title.into()),
@@ -42,8 +42,8 @@ pub(super) fn form_group(rows: impl IntoIterator<Item = AnyElement>, t: &Theme) 
         .flex_col()
         .w_full()
         .min_w_0()
-        .px(px(12.))
-        .rounded(px(10.))
+        .px(ui_size(12.))
+        .rounded(ui_size(10.))
         .bg(rgb(t.row_alt_bg));
     for (index, row) in rows.into_iter().enumerate() {
         if index > 0 {
@@ -61,9 +61,9 @@ pub(super) fn row_container() -> Div {
         .items_center()
         .w_full()
         .min_w_0()
-        .min_h(px(40.))
-        .text_size(ui_font_size(ROW_FONT_SIZE))
-        .gap(px(8.))
+        .min_h(ui_size(40.))
+        .text_size(ui_size(ROW_FONT_SIZE))
+        .gap(ui_size(8.))
 }
 
 pub(super) fn detail_row(
@@ -74,11 +74,8 @@ pub(super) fn detail_row(
     t: &Theme,
 ) -> Div {
     row_container()
-        .py(px(5.))
-        .child(
-            icons::icon(glyph_str, t.scaled_font_size(14.), t.fg_dim)
-                .w(px(t.scaled_font_size(16.))),
-        )
+        .py(ui_size(5.))
+        .child(icons::icon(glyph_str, 14., t.fg_dim).w(ui_size(16.)))
         .child(
             div()
                 .flex_1()
@@ -95,7 +92,7 @@ pub(super) fn detail_row(
                 .truncate()
                 // Monospaced diagnostics belong to the interface and must not resize with the code font.
                 .code_font()
-                .text_size(ui_font_size(DETAIL_FONT_SIZE))
+                .text_size(ui_size(DETAIL_FONT_SIZE))
                 .text_color(rgb(detail_color))
                 .child(detail.into()),
         )
@@ -108,12 +105,9 @@ pub(super) fn field_row(
     t: &Theme,
 ) -> AnyElement {
     row_container()
-        .py(px(6.))
-        .gap(px(6.))
-        .child(
-            icons::icon(glyph_str, t.scaled_font_size(14.), t.fg_dim)
-                .w(px(t.scaled_font_size(16.))),
-        )
+        .py(ui_size(6.))
+        .gap(ui_size(6.))
+        .child(icons::icon(glyph_str, 14., t.fg_dim).w(ui_size(16.)))
         .child(
             div()
                 .flex_1()
@@ -125,7 +119,7 @@ pub(super) fn field_row(
             div()
                 .max_w(gpui::relative(0.6))
                 .min_w_0()
-                .ml(px(6.))
+                .ml(ui_size(6.))
                 .child(value),
         )
         .into_any_element()
@@ -151,7 +145,7 @@ pub(super) fn stepper(
             .w(px(t.scaled_control_height(28., 14.)))
             .h(px(t.scaled_control_height(28., 14.)))
             .bg(rgb(t.toggle_inactive_bg))
-            .text_size(ui_font_size(14.))
+            .text_size(ui_size(14.))
             .text_color(rgb(t.fg))
             .child(label);
         if enabled {
@@ -170,14 +164,14 @@ pub(super) fn stepper(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(current_value(&label, t))
         .child(
             div()
                 .flex()
                 .flex_row()
-                .gap(px(1.))
-                .p(px(1.))
+                .gap(ui_size(1.))
+                .p(ui_size(1.))
                 .rounded_md()
                 .overflow_hidden()
                 .bg(rgb(t.border))
@@ -189,10 +183,10 @@ pub(super) fn stepper(
 
 pub(super) fn current_value(value: &str, t: &Theme) -> AnyElement {
     div()
-        .max_w(px(360.))
+        .max_w(ui_size(360.))
         .min_w_0()
         .truncate()
-        .text_size(ui_font_size(ROW_FONT_SIZE))
+        .text_size(ui_size(ROW_FONT_SIZE))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(value.to_owned()))
         .into_any_element()

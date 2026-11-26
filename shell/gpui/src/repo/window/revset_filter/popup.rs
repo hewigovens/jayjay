@@ -11,7 +11,7 @@ use super::super::RepoWindow;
 use super::super::picker::{self, PickerQuery};
 use super::completions::completion_row;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::line_input_content;
 
@@ -143,7 +143,7 @@ fn panel(
         .flex()
         .flex_col()
         .w(px(width))
-        .max_h(px(480.))
+        .max_h(ui_size(480.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
@@ -154,8 +154,8 @@ fn panel(
         .children(state.error.clone().map(|error| {
             div()
                 .debug_selector(|| "revset-popup-error".to_owned())
-                .px(px(12.))
-                .py(px(8.))
+                .px(ui_size(12.))
+                .py(ui_size(8.))
                 .bg(rgb(t.tag_removed_bg))
                 .code_text(11., t)
                 .text_color(rgb(t.tag_removed_fg))
@@ -169,7 +169,7 @@ fn panel(
                 .flex_col()
                 .min_h_0()
                 .overflow_y_scroll()
-                .pb(px(4.))
+                .pb(ui_size(4.))
                 .children(rows),
         )
         .child(footer(t))
@@ -182,9 +182,9 @@ fn field(state: &RevsetPopupState, t: &Theme) -> AnyElement {
         .flex()
         .flex_none()
         .items_center()
-        .gap(px(8.))
-        .h(px(40.))
-        .px(px(12.))
+        .gap(ui_size(8.))
+        .h(ui_size(40.))
+        .px(ui_size(12.))
         .border_b_1()
         .border_color(rgb(t.border))
         .code_text(13., t)
@@ -221,8 +221,8 @@ fn chips(
         .flex()
         .flex_row()
         .flex_wrap()
-        .gap(px(6.))
-        .p(px(12.))
+        .gap(ui_size(6.))
+        .p(ui_size(12.))
         .children(presets.map(|preset| {
             let active = preset.revset == current;
             let (background, foreground) = if active {
@@ -239,10 +239,10 @@ fn chips(
                 .flex_none()
                 .items_center()
                 .h(px(t.scaled_control_height(24., 12.)))
-                .px(px(10.))
+                .px(ui_size(10.))
                 .rounded_full()
                 .bg(rgb(background))
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(foreground))
                 .cursor_pointer()
                 .hover(|s| s.bg(rgb(t.row_alt_bg)))
@@ -278,9 +278,9 @@ fn suggestion_row(
     let title = SharedString::from(suggestion.title.clone());
     let mut row = picker::row(id, selected, 28., t)
         .h_auto()
-        .min_h(px(28.))
-        .py(px(6.))
-        .gap(px(8.))
+        .min_h(ui_size(28.))
+        .py(ui_size(6.))
+        .gap(ui_size(8.))
         .cursor_pointer()
         .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
             cx.stop_propagation();
@@ -323,12 +323,12 @@ fn footer(t: &Theme) -> AnyElement {
         .flex_none()
         .flex_row()
         .items_center()
-        .gap(px(14.))
-        .h(px(30.))
-        .px(px(14.))
+        .gap(ui_size(14.))
+        .h(ui_size(30.))
+        .px(ui_size(14.))
         .border_t_1()
         .border_color(rgb(t.border))
-        .text_size(ui_font_size(11.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_faint))
         .child(jayjay_i18n::repo::return_to_apply())
         .child(jayjay_i18n::repo::esc_to_cancel())

@@ -1,13 +1,13 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
 use super::OnboardingView;
 use super::state::{JjCheckState, OnboardingPage};
 use super::widgets::{command_row, mono_line, success_badge, tip};
 use crate::app::config;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::platform::JJ_PACKAGE_MANAGER;
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
@@ -56,22 +56,22 @@ fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
         .flex()
         .flex_col()
         .items_center()
-        .gap(px(14.))
-        .max_w(px(380.))
-        .px(px(24.))
+        .gap(ui_size(14.))
+        .max_w(ui_size(380.))
+        .px(ui_size(24.))
         .text_align(gpui::TextAlign::Center)
         .child(logo.image(88.))
         .child(
             div()
-                .text_size(ui_font_size(28.))
+                .text_size(ui_size(28.))
                 .font_weight(gpui::FontWeight::BOLD)
                 .text_color(rgb(t.fg))
                 .child(jayjay_i18n::menu::welcome_to_jayjay()),
         )
         .child(
             div()
-                .text_size(ui_font_size(14.))
-                .line_height(ui_font_size(20.))
+                .text_size(ui_size(14.))
+                .line_height(ui_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::onboarding::welcome_description()),
         )
@@ -87,16 +87,16 @@ fn jj_check_page(
         .flex()
         .flex_col()
         .items_center()
-        .gap(px(12.))
-        .max_w(px(420.))
-        .px(px(24.))
+        .gap(ui_size(12.))
+        .max_w(ui_size(420.))
+        .px(ui_size(24.))
         .text_align(gpui::TextAlign::Center);
 
     match &state.jj {
         JjCheckState::Checking => {
             root = root.child(icons::icon(glyph::SYNC, 44., t.fg_dim)).child(
                 div()
-                    .text_size(ui_font_size(18.))
+                    .text_size(ui_size(18.))
                     .text_color(rgb(t.fg))
                     .child(jayjay_i18n::onboarding::checking_for_jj_ellipsis()),
             );
@@ -104,7 +104,7 @@ fn jj_check_page(
         JjCheckState::Loaded(status) if status.is_installed => {
             root = root.child(success_badge(t)).child(
                 div()
-                    .text_size(ui_font_size(22.))
+                    .text_size(ui_size(22.))
                     .font_weight(gpui::FontWeight::SEMIBOLD)
                     .text_color(rgb(t.fg))
                     .child(jayjay_i18n::onboarding::jujutsu_is_installed()),
@@ -122,15 +122,15 @@ fn jj_check_page(
                 .child(icons::icon(glyph::WARNING, 48., t.compare_accent))
                 .child(
                     div()
-                        .text_size(ui_font_size(22.))
+                        .text_size(ui_size(22.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
                         .child(jayjay_i18n::onboarding::jujutsu_not_found()),
                 )
                 .child(
                     div()
-                        .text_size(ui_font_size(14.))
-                        .line_height(ui_font_size(20.))
+                        .text_size(ui_size(14.))
+                        .line_height(ui_size(20.))
                         .text_color(rgb(t.fg_dim))
                         .child(match JJ_PACKAGE_MANAGER {
                             Some((manager, _)) => jayjay_i18n::onboarding::requires_jj(manager),
@@ -166,9 +166,9 @@ fn identity_line(
         .flex_row()
         .items_center()
         .justify_center()
-        .gap(px(8.))
-        .pt(px(12.))
-        .text_size(ui_font_size(13.))
+        .gap(ui_size(8.))
+        .pt(ui_size(12.))
+        .text_size(ui_size(13.))
         .text_color(rgb(t.fg_dim))
         .whitespace_normal();
     match (&state.identity, state.identity_skipped) {
@@ -215,13 +215,13 @@ fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
         .flex()
         .flex_col()
         .items_center()
-        .gap(px(12.))
-        .max_w(px(420.))
-        .px(px(24.))
+        .gap(ui_size(12.))
+        .max_w(ui_size(420.))
+        .px(ui_size(24.))
         .child(success_badge(t))
         .child(
             div()
-                .text_size(ui_font_size(22.))
+                .text_size(ui_size(22.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child(jayjay_i18n::onboarding::youre_all_set()),
@@ -231,8 +231,8 @@ fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
                 .flex()
                 .flex_col()
                 .items_start()
-                .gap(px(6.))
-                .pt(px(4.))
+                .gap(ui_size(6.))
+                .pt(ui_size(4.))
                 .child(tip(
                     glyph::FOLDER,
                     jayjay_i18n::onboarding::open_any_jj_repository_to_get(),
@@ -267,16 +267,16 @@ fn stats_toggle(t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(10.))
-        .pt(px(6.))
-        .text_size(ui_font_size(13.))
+        .gap(ui_size(10.))
+        .pt(ui_size(6.))
+        .text_size(ui_size(13.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
         .child(
             div()
                 .flex()
                 .justify_center()
-                .w(px(16.))
+                .w(ui_size(16.))
                 .child(checkbox_glyph(enabled, t)),
         )
         .child(jayjay_i18n::telemetry::opt_in())
@@ -297,14 +297,14 @@ fn page_indicator(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.));
+        .gap(ui_size(8.));
     for page in OnboardingPage::all() {
         let active = page == current;
         row = row.child(
             div()
                 .id(SharedString::from(format!("onboarding-dot-{}", page.id())))
-                .w(px(if active { 8. } else { 6. }))
-                .h(px(if active { 8. } else { 6. }))
+                .w(ui_size(if active { 8. } else { 6. }))
+                .h(ui_size(if active { 8. } else { 6. }))
                 .rounded_full()
                 .bg(rgb(if active {
                     t.selected_accent
@@ -321,7 +321,7 @@ fn page_indicator(
 }
 
 fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement {
-    let mut left = div().w(px(80.));
+    let mut left = div().w(ui_size(80.));
     if let Some(previous) = page.previous() {
         left = left.child(
             button("onboarding-back", jayjay_i18n::onboarding::back(), t, false)
@@ -358,8 +358,8 @@ fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<OnboardingView>) -> 
         .items_center()
         .justify_between()
         .w_full()
-        .px(px(20.))
-        .py(px(18.))
+        .px(ui_size(20.))
+        .py(ui_size(18.))
         .child(left)
         .child(right)
 }

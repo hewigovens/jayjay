@@ -110,9 +110,9 @@ fn stripe(color: u32, t: &Theme) -> Div {
 fn line_no_cell(line_no: u32, t: &Theme) -> Div {
     div()
         .flex_none()
-        .w(px(36.))
+        .w(px(t.scaled_code_font_size(36.)))
         .h(px(t.code_line_height()))
-        .px(px(4.))
+        .px(px(t.scaled_code_font_size(4.)))
         .text_color(rgb(t.diff_gutter_fg))
         .bg(rgb(t.diff_gutter_bg))
         .child(SharedString::from(line_no.to_string()))
@@ -121,9 +121,9 @@ fn line_no_cell(line_no: u32, t: &Theme) -> Div {
 fn change_cell(id_prefix: String, id_rest: String, t: &Theme) -> Div {
     div()
         .flex_none()
-        .w(px(64.))
+        .w(px(t.scaled_code_font_size(64.)))
         .h(px(t.code_line_height()))
-        .px(px(4.))
+        .px(px(t.scaled_code_font_size(4.)))
         .flex()
         .flex_row()
         .child(
@@ -142,9 +142,9 @@ fn change_cell(id_prefix: String, id_rest: String, t: &Theme) -> Div {
 fn author_cell(initials: &str, t: &Theme) -> Div {
     div()
         .flex_none()
-        .w(px(28.))
+        .w(px(t.scaled_code_font_size(28.)))
         .h(px(t.code_line_height()))
-        .px(px(4.))
+        .px(px(t.scaled_code_font_size(4.)))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(initials.to_owned()))
 }
@@ -153,9 +153,9 @@ fn date_cell(ts: &str, t: &Theme) -> Div {
     let short = ts.chars().take(10).collect::<String>();
     div()
         .flex_none()
-        .w(px(72.))
+        .w(px(t.scaled_code_font_size(72.)))
         .h(px(t.code_line_height()))
-        .px(px(4.))
+        .px(px(t.scaled_code_font_size(4.)))
         .text_color(rgb(t.fg_faint))
         .child(SharedString::from(short))
 }
@@ -167,7 +167,7 @@ fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
         .flex_1()
         .min_w_0()
         .h(px(t.code_line_height()))
-        .px(px(8.))
+        .px(px(t.scaled_code_font_size(8.)))
         .text_color(rgb(t.fg));
 
     match spans {

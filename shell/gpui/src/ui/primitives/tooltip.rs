@@ -5,7 +5,7 @@ use gpui::{
     SharedString, StatefulInteractiveElement, Styled, Window, div, hsla, px, rgb,
 };
 
-use crate::app::theme::{Theme, theme, ui_font_size};
+use crate::app::theme::{Theme, theme, ui_size};
 use crate::repo::window::RepoWindow;
 use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::evolog::EvologView;
@@ -71,19 +71,19 @@ impl Render for TextTooltip {
         let theme = theme(cx);
         div()
             .debug_selector(|| "help-tag".to_owned())
-            .pl(px(6.))
-            .pt(px(8.))
+            .pl(ui_size(6.))
+            .pt(ui_size(8.))
             .child(
                 div()
-                    .px(px(8.))
-                    .py(px(4.))
+                    .px(ui_size(8.))
+                    .py(ui_size(4.))
                     .rounded_sm()
                     .bg(rgb(theme.detail_bg))
                     .border_1()
                     .border_color(rgb(theme.border))
                     .shadow(tooltip_shadow(theme))
-                    .max_w(px(480.))
-                    .text_size(ui_font_size(11.))
+                    .max_w(ui_size(480.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(theme.fg))
                     .child(self.label.clone()),
             )

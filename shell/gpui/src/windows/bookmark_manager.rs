@@ -14,7 +14,7 @@ use jayjay_core::{BookmarkInfo, JayResult, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
 use crate::ui::loading::loading_status;
@@ -328,7 +328,7 @@ impl Render for BookmarkManagerView {
                         div()
                             .id("bookmark-rename-error")
                             .debug_selector(|| "bookmark-rename-error".to_owned())
-                            .text_size(ui_font_size(12.))
+                            .text_size(ui_size(12.))
                             .text_color(rgb(t.error_fg))
                             .child(message)
                             .into_any_element()

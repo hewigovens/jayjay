@@ -14,7 +14,7 @@ use super::row::{
     file_row_height, file_text_content, file_text_limits, finish_file_row, review_checkbox, row_bg,
     row_separator,
 };
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 
@@ -84,12 +84,13 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         .flex_col()
         .gap(px(TREE_ROW_GAP))
         .h_full()
-        .px(px(TREE_ROW_HORIZONTAL_MARGIN))
+        .px(px(theme.scaled_font_size(TREE_ROW_HORIZONTAL_MARGIN)))
         .py(px(TREE_ROW_VERTICAL_MARGIN))
         .overflow_y_scroll()
         .scrollbar_width(px(0.))
         .track_scroll(&scroll);
-    let row_width = (column_width - TREE_ROW_HORIZONTAL_MARGIN * 2.).max(0.);
+    let row_width =
+        (column_width - theme.scaled_font_size(TREE_ROW_HORIZONTAL_MARGIN * 2.)).max(0.);
 
     for (ix, entry) in tree.iter().enumerate() {
         let row = if let Some(hunk_ix) = entry.hunk_index {
@@ -215,7 +216,7 @@ where
     let indent = (entry.depth as f32) * 14.0;
     let name_opacity = file_name_opacity(show_review, review_rollup);
     let fixed_chrome = if show_review { 80.0 } else { 56.0 };
-    let text_px = (column_width - fixed_chrome - indent).max(80.0);
+    let text_px = (column_width - theme.scaled_font_size(fixed_chrome + indent)).max(80.0);
     let (basename_chars, path_chars) = file_text_limits(text_px, theme);
     let name = super::flat::middle_elide(&entry.name, basename_chars);
     let content = file_text_content(
@@ -234,9 +235,9 @@ where
         .flex_row()
         .items_center()
         .w_full()
-        .gap(px(8.))
-        .pl(px(6. + indent))
-        .pr(px(6.))
+        .gap(ui_size(8.))
+        .pl(px(theme.scaled_font_size(6. + indent)))
+        .pr(ui_size(6.))
         .h(px(file_row_height(theme)))
         .rounded_md()
         .bg(bg_row)
@@ -284,9 +285,9 @@ where
         .flex_row()
         .items_center()
         .w_full()
-        .gap(px(4.))
-        .pl(px(6. + indent))
-        .pr(px(6.))
+        .gap(ui_size(4.))
+        .pl(px(t.scaled_font_size(6. + indent)))
+        .pr(ui_size(6.))
         .h(px(TREE_DIR_ROW_HEIGHT + t.scaled_font_size(12.) - 12.))
         .relative()
         .cursor_pointer()
@@ -299,7 +300,7 @@ where
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(entry.name.clone())),

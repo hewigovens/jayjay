@@ -29,7 +29,12 @@ pub(super) fn label_text(moved: MovedRow, style: DiffSpanStyle) -> String {
     format!("{arrow} L{}", moved.counterpart_line)
 }
 
-pub(super) fn label_width(title: &str, size: Pixels, text_system: &WindowTextSystem) -> Pixels {
+pub(super) fn label_width(
+    title: &str,
+    size: Pixels,
+    theme: &Theme,
+    text_system: &WindowTextSystem,
+) -> Pixels {
     let run = TextRun {
         len: title.len(),
         font: font(fonts::interface()),
@@ -39,7 +44,7 @@ pub(super) fn label_width(title: &str, size: Pixels, text_system: &WindowTextSys
         strikethrough: None,
     };
     text_system.layout_line(title, size, &[run], None).width
-        + px(TRAILING_INSET + HORIZONTAL_PADDING * 2. + CODE_GAP)
+        + px(theme.scaled_code_font_size(TRAILING_INSET + HORIZONTAL_PADDING * 2. + CODE_GAP))
 }
 
 pub(super) fn moved_label(
@@ -59,7 +64,7 @@ pub(super) fn moved_label(
             .id(id)
             .debug_selector(move || format!("{}-{}", id.0, id.1))
             .absolute()
-            .right(px(TRAILING_INSET))
+            .right(px(theme.scaled_code_font_size(TRAILING_INSET)))
             .top_0()
             .h_full()
             .flex()
@@ -67,7 +72,7 @@ pub(super) fn moved_label(
             .cursor_pointer()
             .child(
                 div()
-                    .px(px(HORIZONTAL_PADDING))
+                    .px(px(theme.scaled_code_font_size(HORIZONTAL_PADDING)))
                     .rounded_md()
                     .font_family(fonts::interface())
                     .text_size(label_font_size(theme))

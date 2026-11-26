@@ -1,6 +1,6 @@
 use super::pending_edit::PendingEdit;
 use crate::app::config::{self, AppConfigStore};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::text_area::{TextArea, TextAreaUpdated};
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
@@ -81,8 +81,8 @@ impl Render for ShortcutSettings {
             .min_h_0()
             .flex()
             .flex_col()
-            .gap(px(10.))
-            .text_size(ui_font_size(12.))
+            .gap(ui_size(10.))
+            .text_size(ui_size(12.))
             .child(self.filter_bar(&t, cx));
         let mut groups: Vec<(ShortcutContext, Vec<&EffectiveEntry>)> = Vec::new();
         for entry in bindings
@@ -96,7 +96,7 @@ impl Render for ShortcutSettings {
                 None => groups.push((context, vec![entry])),
             }
         }
-        let mut list = div().flex().flex_col().pr(px(12.));
+        let mut list = div().flex().flex_col().pr(ui_size(12.));
         for (context, entries) in groups {
             list = list.child(Self::group_title(context, &t));
             for entry in entries {

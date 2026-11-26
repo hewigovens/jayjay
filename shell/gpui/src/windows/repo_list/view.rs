@@ -9,7 +9,7 @@ use super::{header, sections};
 use crate::app::actions::CloseWindow;
 use crate::app::config;
 use crate::app::repositories;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::ui::icons;
 use crate::ui::pane_drag::TrackPaneDrag;
@@ -94,8 +94,8 @@ impl RepoListWindow {
                     .child(
                         scroll_column("repo-list-recent-scroll").child(
                             sections::recent_section(self.groups.recent.clone(), pinned, t)
-                                .px(px(14.))
-                                .py(px(18.)),
+                                .px(ui_size(14.))
+                                .py(ui_size(18.)),
                         ),
                     ),
             );
@@ -123,19 +123,20 @@ impl RepoListWindow {
             .flex()
             .flex_col();
         if self.groups.pinned.is_empty() {
-            return column
-                .items_center()
-                .justify_center()
-                .child(content.px(px(30.)).child(header::header(&self.logo, t)));
+            return column.items_center().justify_center().child(
+                content
+                    .px(ui_size(30.))
+                    .child(header::header(&self.logo, t)),
+            );
         }
         column.child(
             scroll_column("repo-list-scroll").items_center().child(
                 content
                     .child(
                         div()
-                            .px(px(30.))
-                            .pt(px(14.))
-                            .pb(px(22.))
+                            .px(ui_size(30.))
+                            .pt(ui_size(14.))
+                            .pb(ui_size(22.))
                             .child(header::header(&self.logo, t)),
                     )
                     .child(divider_h(t))
@@ -147,8 +148,8 @@ impl RepoListWindow {
                             pinned,
                             t,
                         )
-                        .px(px(30.))
-                        .py(px(18.)),
+                        .px(ui_size(30.))
+                        .py(ui_size(18.)),
                     ),
             ),
         )

@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::ShortId;
 
@@ -8,7 +8,7 @@ use super::RepoWindow;
 use super::dag_drag::DagRebaseRequest;
 use crate::app::config;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_header, overlay_layer};
 use crate::ui::primitives::{button, checkbox_row, icon_label};
@@ -68,7 +68,7 @@ pub(super) fn rebase_confirmation_overlay(
                 .child(toggle)
                 .child(
                     div()
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_dim))
                         .child(jayjay_i18n::repo::any_conflicts_will_appear_inline_after()),
                 )
@@ -98,10 +98,10 @@ fn summary_row(title: &str, value: &str, detail: &ShortId, t: &Theme) -> AnyElem
     div()
         .flex()
         .flex_col()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(title.to_owned()),
         )
@@ -110,13 +110,13 @@ fn summary_row(title: &str, value: &str, detail: &ShortId, t: &Theme) -> AnyElem
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(
                     div()
                         .flex_1()
                         .min_w_0()
                         .truncate()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .text_color(rgb(t.fg))
                         .child(value.to_owned()),
                 )

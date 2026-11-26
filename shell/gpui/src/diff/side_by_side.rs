@@ -136,6 +136,6 @@ fn separator_content(label: String, theme: &Theme) -> Div {
         .text_size(px(theme.compact_code_font_size()))
         .line_height(px(theme.code_line_height()))
         .text_color(rgb(theme.diff_text_dim))
-        .px(px(20.))
+        .px(px(theme.scaled_code_font_size(20.)))
         .child(SharedString::from(label))
 }

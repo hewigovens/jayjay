@@ -138,7 +138,7 @@ impl Theme {
     }
 
     pub(crate) fn scaled_control_height(&self, height: f32, base_font_size: f32) -> f32 {
-        height + (self.scaled_font_size(base_font_size) - base_font_size).max(0.)
+        height + self.scaled_font_size(base_font_size) - base_font_size
     }
 
     pub(crate) fn scaled_code_font_size(&self, base: f32) -> f32 {
@@ -150,15 +150,18 @@ impl Theme {
     }
 
     pub(crate) fn code_line_height(&self) -> f32 {
-        ((self.code_font_size() + 5.).max(18.) * self.code_line_spacing).round()
+        ((self.code_font_size() + 5.).max(self.scaled_code_font_size(18.).min(18.))
+            * self.code_line_spacing)
+            .round()
     }
 
     pub(crate) fn compact_code_font_size(&self) -> f32 {
-        (self.code_font_size() - 1.).max(9.)
+        (self.code_font_size() - 1.).max(crate::app::config::AppConfig::MIN_FONT_SIZE)
     }
 }
 
-pub(crate) const fn ui_font_size(base: f32) -> Rems {
+/// A length given in pixels at the default font size, as rems so it follows the user's zoom.
+pub(crate) const fn ui_size(base: f32) -> Rems {
     rems(base / DEFAULT_REM_SIZE)
 }
 

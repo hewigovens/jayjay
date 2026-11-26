@@ -4,10 +4,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use gpui::{
     App, Context, Entity, FocusHandle, Focusable, InteractiveElement, IntoElement, ParentElement,
-    Render, StatefulInteractiveElement, Styled, Window, div, prelude::FluentBuilder as _, px, rgb,
+    Render, StatefulInteractiveElement, Styled, Window, div, prelude::FluentBuilder as _, rgb,
 };
 
-use crate::app::theme::{theme, ui_font_size};
+use crate::app::theme::{theme, ui_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::loading::loading_status;
 use crate::ui::merge_scroll::MergeSync;
@@ -155,22 +155,22 @@ impl ExternalToolWindow {
             .flex()
             .flex_row()
             .items_center()
-            .gap(px(10.))
-            .h(px(48.))
-            .px(px(14.))
+            .gap(ui_size(10.))
+            .h(ui_size(48.))
+            .px(ui_size(14.))
             .bg(rgb(t.header_bg))
             .border_b_1()
             .border_color(rgb(t.border))
             .child(icon(header_glyph, 16., header_color))
             .child(
                 div()
-                    .text_size(ui_font_size(14.))
+                    .text_size(ui_size(14.))
                     .font_weight(gpui::FontWeight::SEMIBOLD)
                     .child(self.invocation.title()),
             )
             .child(
                 div()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(status),
             )
@@ -199,7 +199,7 @@ impl ExternalToolWindow {
             };
             header = header.child(
                 div()
-                    .text_size(ui_font_size(11.))
+                    .text_size(ui_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(message),
             );
@@ -232,11 +232,11 @@ impl Render for ExternalToolWindow {
         if let Some(error) = &self.error_message {
             root = root.child(
                 div()
-                    .px(px(14.))
-                    .py(px(8.))
+                    .px(ui_size(14.))
+                    .py(ui_size(8.))
                     .bg(rgb(t.tag_conflict_bg))
                     .text_color(rgb(t.error_fg))
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .child(error.clone()),
             );
         }

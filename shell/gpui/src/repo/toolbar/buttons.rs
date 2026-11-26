@@ -8,7 +8,7 @@ use gpui::{
 
 use crate::app::actions::{ToggleOperationLog, ToggleSidebar};
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::repo::toolbar::{ToolButton, ToolbarActivity};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring, operation_log_title};
@@ -119,7 +119,7 @@ pub(crate) fn sidebar_toggle_button(
             .child(
                 svg()
                     .path(icons::SIDEBAR_LEADING_SVG)
-                    .size(px(TOOLBAR_SYMBOL_SIZE))
+                    .size(ui_size(TOOLBAR_SYMBOL_SIZE))
                     .text_color(rgb(t.fg_dim)),
             ),
         focused == Some(FocusStop::SidebarToggle),
@@ -246,9 +246,9 @@ fn refresh_button(
         content = content.child(
             div()
                 .absolute()
-                .top(px(4.))
-                .right(px(5.))
-                .size(px(7.))
+                .top(ui_size(4.))
+                .right(ui_size(5.))
+                .size(ui_size(7.))
                 .rounded_full()
                 .bg(rgb(t.warning_fg))
                 .debug_selector(|| "toolbar-refresh-stale-badge".to_owned()),
@@ -296,7 +296,7 @@ fn sync_button(
 fn sync_icon(action: SyncAction, animating: bool, t: &Theme, cx: &App) -> AnyElement {
     let icon = svg()
         .path(action.icon_path())
-        .size(px(action.icon_size()))
+        .size(ui_size(action.icon_size()))
         .text_color(rgb(t.fg_dim));
     let direction = action.direction();
     if !animating || cx.reduce_motion() {
@@ -335,7 +335,7 @@ fn repo_tool_button(
                 icons::MARK_PREFIX,
                 mark.name
             )))
-            .size(px(MARK_SIZE * mark.scale))
+            .size(ui_size(MARK_SIZE * mark.scale))
             .text_color(rgb(t.fg_dim))
             .into_any_element(),
         None => icons::icon(action.fallback_glyph(), MARK_SIZE, t.fg_dim).into_any_element(),
@@ -346,8 +346,8 @@ fn repo_tool_button(
                 .flex()
                 .items_center()
                 .justify_center()
-                .size(px(MARK_TILE))
-                .rounded(px(MARK_TILE * 0.27))
+                .size(ui_size(MARK_TILE))
+                .rounded(ui_size(MARK_TILE * 0.27))
                 .bg(rgba(with_alpha(t.fg, 0x1a)))
                 .debug_selector(move || selector.clone())
                 .child(mark),
@@ -367,7 +367,7 @@ fn repo_tool_button(
 fn refresh_icon(is_refreshing: bool, t: &Theme) -> AnyElement {
     let icon = svg()
         .path(icons::REFRESH_SVG)
-        .size(px(TOOLBAR_SYMBOL_SIZE))
+        .size(ui_size(TOOLBAR_SYMBOL_SIZE))
         .text_color(rgb(t.fg_dim));
     if is_refreshing {
         icon.with_animation(

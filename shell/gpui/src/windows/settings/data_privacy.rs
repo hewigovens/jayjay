@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, App, AppContext, ClickEvent, Context, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, rgb,
 };
 use jayjay_core::{JayResult, ReviewPrune};
 use jayjay_i18n::{common, settings, telemetry};
@@ -9,7 +9,7 @@ use jayjay_review::{ReviewStore, ReviewStoreSummary};
 use super::SettingsView;
 use super::shared::{field_row, form_section};
 use crate::app::config::{self, AppConfig};
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{confirmation_card, overlay_actions, overlay_layer};
 use crate::ui::primitives::{boolean_toggle_button, button};
@@ -36,7 +36,7 @@ pub(super) fn data_privacy_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .child(form_section(
             settings::privacy(),
             [field_row(glyph::CHART_BAR, telemetry::opt_in(), toggle, t)],
@@ -82,10 +82,10 @@ fn review_data_row(view: &SettingsView, t: &Theme, cx: &mut Context<SettingsView
             .flex()
             .flex_row()
             .items_center()
-            .gap(px(8.))
+            .gap(ui_size(8.))
             .child(
                 div()
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .text_color(rgb(t.fg_dim))
                     .child(SharedString::from(summary)),
             )

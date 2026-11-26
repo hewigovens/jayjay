@@ -1,11 +1,11 @@
 use gpui::{
     AnyElement, ClickEvent, ClipboardItem, Context, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    SharedString, StatefulInteractiveElement, Styled, div, rgb,
 };
 
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
 
@@ -47,7 +47,7 @@ pub(super) fn command_view(
         .flex_col()
         .flex_1()
         .min_h_0()
-        .py(px(4.))
+        .py(ui_size(4.))
         .child(command_header(&cmd_text, &hint, hint_color, output, t, cx));
 
     match output {
@@ -77,9 +77,9 @@ fn command_header(
         .flex_row()
         .items_center()
         .justify_between()
-        .gap(px(10.))
-        .px(px(14.))
-        .py(px(8.))
+        .gap(ui_size(10.))
+        .px(ui_size(14.))
+        .py(ui_size(8.))
         .child(icons::icon(glyph::ARROW_CIRCLE_RIGHT, 14., t.fg_dim))
         .child(
             div()
@@ -90,7 +90,7 @@ fn command_header(
         )
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(hint_color))
                 .child(hint.clone()),
         );
@@ -105,18 +105,18 @@ fn discovery(history: &[String], t: &Theme, cx: &mut Context<CommandPalette>) ->
     let mut col = div()
         .flex()
         .flex_col()
-        .gap(px(10.))
-        .px(px(14.))
-        .py(px(10.))
-        .text_size(ui_font_size(11.))
+        .gap(ui_size(10.))
+        .px(ui_size(14.))
+        .py(ui_size(10.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(jayjay_i18n::palette::raw_jj_commands_run_in_this())
         .child(suggestion_buttons(t, cx));
 
     if !history.is_empty() {
-        let mut recent = div().flex().flex_col().gap(px(2.)).child(
+        let mut recent = div().flex().flex_col().gap(ui_size(2.)).child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::repo::recent()),
         );
@@ -129,7 +129,7 @@ fn discovery(history: &[String], t: &Theme, cx: &mut Context<CommandPalette>) ->
 }
 
 fn suggestion_buttons(t: &Theme, cx: &mut Context<CommandPalette>) -> impl IntoElement {
-    let mut row = div().flex().flex_row().gap(px(8.)).flex_wrap();
+    let mut row = div().flex().flex_row().gap(ui_size(8.)).flex_wrap();
     for suggestion in SUGGESTIONS {
         row = row.child(command_chip(format!("jj {suggestion}"), t, cx));
     }
@@ -143,9 +143,9 @@ fn history_row(command: &str, t: &Theme, cx: &mut Context<CommandPalette>) -> im
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(8.))
-        .py(px(5.))
+        .gap(ui_size(8.))
+        .px(ui_size(8.))
+        .py(ui_size(5.))
         .rounded_sm()
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.selected_bg)))
@@ -200,8 +200,8 @@ fn output_pane(text: &str, t: &Theme) -> impl IntoElement {
         .flex_1()
         .min_h_0()
         .overflow_y_scroll()
-        .px(px(10.))
-        .py(px(6.))
+        .px(ui_size(10.))
+        .py(ui_size(6.))
         .bg(rgb(t.header_bg))
         .border_1()
         .border_color(rgb(t.border))

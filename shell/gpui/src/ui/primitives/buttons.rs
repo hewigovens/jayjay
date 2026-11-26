@@ -4,7 +4,7 @@ use gpui::{
     Window, div, px, rgb, svg,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 
 pub(crate) fn button(
@@ -23,8 +23,8 @@ pub(crate) fn small_button(
 ) -> Stateful<Div> {
     button_container(id, theme, false)
         .h(px(theme.scaled_control_height(22., 11.)))
-        .px(px(8.))
-        .text_size(ui_font_size(11.))
+        .px(ui_size(8.))
+        .text_size(ui_size(11.))
         .child(label.into())
 }
 
@@ -43,12 +43,12 @@ pub(crate) fn button_container(
         .flex()
         .items_center()
         .justify_center()
-        .px(px(10.))
+        .px(ui_size(10.))
         .h(px(theme.scaled_control_height(28., 12.)))
         .rounded_md()
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
 }
@@ -74,8 +74,8 @@ fn icon_button_frame(id: impl Into<SharedString>, width: f32, height: f32) -> St
         .flex_none()
         .items_center()
         .justify_center()
-        .w(px(width))
-        .h(px(height))
+        .w(ui_size(width))
+        .h(ui_size(height))
         .rounded_md()
 }
 
@@ -105,7 +105,12 @@ pub(crate) fn svg_icon_button(
     icon_button_frame(id, width, height)
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
-        .child(svg().path(path).size(px(icon_size)).text_color(rgb(color)))
+        .child(
+            svg()
+                .path(path)
+                .size(ui_size(icon_size))
+                .text_color(rgb(color)),
+        )
 }
 
 pub(crate) fn copy_icon_button(
@@ -160,8 +165,8 @@ where
 
     let thumb = div()
         .flex_none()
-        .w(px(18.))
-        .h(px(18.))
+        .w(ui_size(18.))
+        .h(ui_size(18.))
         .rounded_full()
         .bg(rgb(theme.switch_thumb));
 
@@ -169,9 +174,9 @@ where
         .flex()
         .flex_row()
         .items_center()
-        .w(px(44.))
-        .h(px(24.))
-        .px(px(2.))
+        .w(ui_size(44.))
+        .h(ui_size(24.))
+        .px(ui_size(2.))
         .rounded_full()
         .bg(rgb(track_bg))
         .border_1()
@@ -191,8 +196,8 @@ where
         .justify_center()
         .role(Role::Switch)
         .aria_toggled(toggled)
-        .w(px(48.))
-        .h(px(28.))
+        .w(ui_size(48.))
+        .h(ui_size(28.))
         .rounded_full()
         .cursor_pointer()
         .on_click(on_click)

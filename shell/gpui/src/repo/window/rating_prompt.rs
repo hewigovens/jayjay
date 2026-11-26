@@ -1,12 +1,12 @@
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, KeyDownEvent, ParentElement,
-    StatefulInteractiveElement, Styled, div, img, px, rgb,
+    StatefulInteractiveElement, Styled, div, img, rgb,
 };
 
 use super::{RepoModal, RepoWindow};
 use crate::app::links::{self, REPOSITORY_URL, SPONSOR_URL};
 use crate::app::rating_prompt::RatingPromptStore;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
 use crate::ui::overlay::{overlay_card, overlay_layer};
 use crate::ui::primitives::button;
@@ -49,17 +49,17 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
             overlay_card(t, 340.)
                 .debug_selector(|| "rating-prompt".to_owned())
                 .items_center()
-                .child(img(icons::HEART_CIRCLE_SVG).size(px(40.)))
+                .child(img(icons::HEART_CIRCLE_SVG).size(ui_size(40.)))
                 .child(
                     div()
-                        .text_size(ui_font_size(16.))
+                        .text_size(ui_size(16.))
                         .font_weight(FontWeight::BOLD)
                         .text_color(rgb(t.fg))
                         .child(jayjay_i18n::repo::enjoying_jayjay()),
                 )
                 .child(
                     div()
-                        .text_size(ui_font_size(12.))
+                        .text_size(ui_size(12.))
                         .text_color(rgb(t.fg_dim))
                         .text_center()
                         .whitespace_normal()
@@ -69,8 +69,8 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
                     div()
                         .flex()
                         .flex_row()
-                        .gap(px(8.))
-                        .pt(px(4.))
+                        .gap(ui_size(8.))
+                        .pt(ui_size(4.))
                         .child(
                             button(
                                 "rating-prompt-star",
@@ -102,7 +102,7 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
                     div()
                         .id("rating-prompt-dont-show")
                         .debug_selector(|| "rating-prompt-dont-show".to_owned())
-                        .text_size(ui_font_size(11.))
+                        .text_size(ui_size(11.))
                         .text_color(rgb(t.fg_faint))
                         .cursor_pointer()
                         .hover(|s| s.text_color(rgb(t.fg_dim)))

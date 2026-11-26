@@ -1,8 +1,7 @@
 use super::entry::ShortcutEntry;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use gpui::{
-    AnyElement, App, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, px,
-    rgb,
+    AnyElement, App, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, rgb,
 };
 use jayjay_core::shortcuts::{EffectiveBindings, ShortcutCommand};
 
@@ -151,7 +150,7 @@ impl ShortcutSection {
         t: &Theme,
         cx: &App,
     ) -> AnyElement {
-        let mut column = div().flex().flex_col().gap(px(20.)).flex_1().min_w_0();
+        let mut column = div().flex().flex_col().gap(ui_size(20.)).flex_1().min_w_0();
         for section in sections
             .iter()
             .filter(|section| section.visible_count(bindings) > 0)
@@ -168,10 +167,10 @@ impl ShortcutSection {
             .debug_selector(move || format!("shortcut-section-{id}"))
             .flex()
             .flex_col()
-            .gap(px(9.))
+            .gap(ui_size(9.))
             .child(
                 div()
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .font_weight(gpui::FontWeight::BOLD)
                     .text_color(rgb(t.fg_dim))
                     .child((self.title)().to_uppercase()),

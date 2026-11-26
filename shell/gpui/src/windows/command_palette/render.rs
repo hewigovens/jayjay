@@ -7,7 +7,7 @@ use jayjay_core::shortcuts::{EffectiveBindings, KeyPlatform};
 
 use super::rows::{self, PaletteRow};
 use super::state::CommandPalette;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::picker::section_header;
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
@@ -18,10 +18,10 @@ pub(super) fn query_box(query: &LineInput, t: &Theme) -> impl IntoElement {
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(14.))
-        .py(px(10.))
-        .text_size(ui_font_size(14.))
+        .gap(ui_size(8.))
+        .px(ui_size(14.))
+        .py(ui_size(10.))
+        .text_size(ui_size(14.))
         .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
         .child(line_input_content(
             query,
@@ -64,7 +64,7 @@ pub(super) fn action_list(
         .flex_col()
         .flex_1()
         .min_h_0()
-        .py(px(4.));
+        .py(ui_size(4.));
     let help_start = CommandPalette::help_section_start(visible);
     for (vis_ix, action_ix) in visible.iter().enumerate() {
         let Some(row) = rows::row(*action_ix, &palette.dynamic_rows) else {
@@ -125,12 +125,12 @@ fn action_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(10.))
-        .px(px(14.))
-        .py(px(7.))
+        .gap(ui_size(10.))
+        .px(ui_size(14.))
+        .py(ui_size(7.))
         .bg(rgb(bg))
         .text_color(rgb(fg))
-        .text_size(ui_font_size(13.))
+        .text_size(ui_size(13.))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.selected_bg)))
         .on_click(cx.listener(move |palette, _: &ClickEvent, window, cx| {

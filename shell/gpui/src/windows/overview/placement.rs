@@ -22,17 +22,17 @@ pub(super) struct Geometry {
 impl Geometry {
     pub(super) fn scaled(scale: f32) -> Self {
         Self {
-            spine_x: 20.,
+            spine_x: 20. * scale,
             trunk_label_width: 170. * scale,
             gutter_width: 200. * scale,
             column_width: 260. * scale,
-            column_gap: 14.,
+            column_gap: 14. * scale,
             card_height: 86. * scale,
-            card_gap: 10.,
+            card_gap: 10. * scale,
             row_height: 24. * scale,
-            node_inset: 12.,
-            top_padding: 14.,
-            band_spacing: 40.,
+            node_inset: 12. * scale,
+            top_padding: 14. * scale,
+            band_spacing: 40. * scale,
         }
     }
 }

@@ -14,7 +14,7 @@ use jayjay_core::{ChangeInfo, DiffHunk, EvologEntry, EvologRow, Repo, ShortId};
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
@@ -290,9 +290,9 @@ fn header(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
-        .px(px(16.))
-        .py(px(10.))
+        .gap(ui_size(8.))
+        .px(ui_size(16.))
+        .py(ui_size(10.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
@@ -432,18 +432,18 @@ fn evolog_row(
         .flex()
         .flex_row()
         .items_baseline()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .w_full()
         .child(
             div()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(t.fg))
                 .child(operation),
         )
         .child(div().flex_1())
         .child(
             div()
-                .text_size(ui_font_size(10.))
+                .text_size(ui_size(10.))
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(when)),
         );
@@ -453,9 +453,9 @@ fn evolog_row(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(2.))
-        .px(px(16.))
-        .py(px(10.))
+        .gap(ui_size(2.))
+        .px(ui_size(16.))
+        .py(ui_size(10.))
         .border_b_1()
         .border_color(rgb(t.row_border))
         .bg(rgb(if selected { t.selected_bg } else { t.detail_bg }))
@@ -472,7 +472,7 @@ fn evolog_row(
         .child(operation_row)
         .child(
             div()
-                .text_size(ui_font_size(11.))
+                .text_size(ui_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(description)),
         )

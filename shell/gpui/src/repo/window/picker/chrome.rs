@@ -7,7 +7,7 @@ use gpui::{
 use super::super::{PanelBoundsSlot, RepoWindow};
 use super::query::PickerQuery;
 use super::sections::PickerItem;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::{button_container, icon_label};
@@ -97,14 +97,14 @@ pub(crate) fn panel<R: Clone + 'static>(
     })
     .with_sizing_behavior(ListSizingBehavior::Infer)
     .min_h_0()
-    .py(px(4.));
+    .py(ui_size(4.));
     div()
         .debug_selector(move || id.to_owned())
         .flex()
         .flex_col()
-        .w(px(width))
-        .min_h(px(120.))
-        .max_h(px(480.))
+        .w(ui_size(width))
+        .min_h(ui_size(120.))
+        .max_h(ui_size(480.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
@@ -127,9 +127,9 @@ pub(crate) fn header(
         .flex()
         .flex_none()
         .items_center()
-        .gap(px(8.))
-        .h(px(45.))
-        .px(px(12.))
+        .gap(ui_size(8.))
+        .h(ui_size(45.))
+        .px(ui_size(12.))
         .border_b_1()
         .border_color(rgb(t.border))
         .child(search_box(filter_id, &query.input, ime_layer, t))
@@ -167,8 +167,8 @@ fn search_box(
         .items_center()
         .min_w_0()
         .flex_1()
-        .gap(px(7.))
-        .text_size(ui_font_size(13.))
+        .gap(ui_size(7.))
+        .text_size(ui_size(13.))
         .cursor_text()
         .child(icons::icon(glyph::SEARCH, 13., t.fg_dim))
         .child(ime_layer)
@@ -188,10 +188,10 @@ pub(crate) fn section_header(
     div()
         .id(id)
         .debug_selector(move || id.to_owned())
-        .px(px(14.))
-        .pt(px(8.))
-        .pb(px(3.))
-        .text_size(ui_font_size(11.))
+        .px(ui_size(14.))
+        .pt(ui_size(8.))
+        .pb(ui_size(3.))
+        .text_size(ui_size(11.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
         .child(label.into())
@@ -201,8 +201,8 @@ pub(crate) fn section_header(
 pub(crate) fn empty(label: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
         .w_full()
-        .py(px(18.))
-        .text_size(ui_font_size(12.))
+        .py(ui_size(18.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg_dim))
         .text_align(gpui::TextAlign::Center)
         .child(label.into())
@@ -217,8 +217,8 @@ pub(crate) fn row(id: String, selected: bool, height: f32, t: &Theme) -> Statefu
         .flex()
         .items_center()
         .w_full()
-        .h(px(height))
-        .px(px(14.))
+        .h(ui_size(height))
+        .px(ui_size(14.))
         .bg(rgb(background))
         .hover(|style| style.bg(rgb(t.row_alt_bg)))
 }

@@ -2,13 +2,13 @@ use crate::app::config::AppConfig;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use gpui::{
     AnyElement, AppContext, Context, Div, Entity, InteractiveElement, IntoElement, ParentElement,
-    SharedString, Styled, div, px,
+    SharedString, Styled, div,
 };
 
 use super::SettingsView;
 use super::dropdown::dropdown_button;
 use super::shared::{detail_row, field_row, form_section};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::platform::custom_terminal_label;
 use crate::ui::icons::{self, glyph};
 use crate::ui::text_area::{TextArea, TextAreaUpdated};
@@ -93,7 +93,7 @@ pub(super) fn tool_sections(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(24.))
+        .gap(ui_size(24.))
         .child(form_section(settings::applications(), rows, t))
         .child(ai_tool_rows(ai_tools, t))
         .into_any_element()
@@ -103,7 +103,7 @@ fn command_input(id: &'static str, input: Entity<TextArea>) -> AnyElement {
     div()
         .id(id)
         .debug_selector(move || id.to_owned())
-        .w(px(360.))
+        .w(ui_size(360.))
         .max_w_full()
         .min_w_0()
         .child(input)

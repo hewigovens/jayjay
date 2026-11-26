@@ -1,10 +1,10 @@
 use crate::app::actions::Dismiss;
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::key_cap;
 use gpui::{
     AnyElement, App, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px,
+    StatefulInteractiveElement, Styled, div,
 };
 use jayjay_core::shortcuts::{EffectiveBindings, ShortcutCommand};
 
@@ -54,7 +54,7 @@ impl ShortcutEntry {
         let label = self.title();
         let keys = self.key_caps(bindings, cx);
         let accessible_label = format!("{}: {}", label, keys.join(" "));
-        let mut caps = div().flex().items_center().gap(px(4.));
+        let mut caps = div().flex().items_center().gap(ui_size(4.));
         for (ix, key) in keys.into_iter().enumerate() {
             let selector = format!("shortcut-key-{id}-{ix}-{key}");
             caps = caps.child(
@@ -72,8 +72,8 @@ impl ShortcutEntry {
             .flex()
             .items_center()
             .justify_between()
-            .gap(px(12.))
-            .text_size(ui_font_size(13.))
+            .gap(ui_size(12.))
+            .text_size(ui_size(13.))
             .child(div().min_w_0().child(label))
             .child(caps)
             .into_any_element()

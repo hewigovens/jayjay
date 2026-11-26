@@ -12,7 +12,7 @@ use gpui::{
 use jayjay_core::{CloneRequest, JayError, SyncToken};
 
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::app::theme::{Theme, observe_window_appearance, ui_size};
 use crate::ui::icons;
 use crate::ui::primitives::button;
 use crate::ui::text_area::{Newline, TextArea, TextAreaUpdated};
@@ -252,8 +252,8 @@ impl CloneRepositoryView {
             .flex()
             .flex_row()
             .items_start()
-            .gap(px(6.))
-            .text_size(ui_font_size(11.));
+            .gap(ui_size(6.))
+            .text_size(ui_size(11.));
         if self.cloning.is_some() {
             return Some(
                 row.text_color(rgb(t.fg_dim))
@@ -286,12 +286,12 @@ fn field_row(label: String, field: impl IntoElement, t: &Theme) -> impl IntoElem
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .child(
             div()
-                .w(px(110.))
+                .w(ui_size(110.))
                 .flex_none()
-                .text_size(ui_font_size(12.))
+                .text_size(ui_size(12.))
                 .text_color(rgb(t.fg_dim))
                 .child(label),
         )
@@ -322,8 +322,8 @@ impl Render for CloneRepositoryView {
             .flex()
             .flex_col()
             .size_full()
-            .gap(px(10.))
-            .p(px(20.))
+            .gap(ui_size(10.))
+            .p(ui_size(20.))
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
             .child(field_row(
@@ -338,7 +338,7 @@ impl Render for CloneRepositoryView {
                     .flex()
                     .flex_row()
                     .items_center()
-                    .gap(px(6.))
+                    .gap(ui_size(6.))
                     .child(
                         div()
                             .id("clone-repository-location")
@@ -363,7 +363,7 @@ impl Render for CloneRepositoryView {
             ))
             .children(
                 self.status(&t, cx)
-                    .map(|status| div().pl(px(118.)).child(status)),
+                    .map(|status| div().pl(ui_size(118.)).child(status)),
             )
             .child(div().flex_1())
             .child(
@@ -371,7 +371,7 @@ impl Render for CloneRepositoryView {
                     .flex()
                     .flex_row()
                     .justify_end()
-                    .gap(px(8.))
+                    .gap(ui_size(8.))
                     .child(
                         button(
                             "clone-repository-cancel",

@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::ssh::{ConnectionState, RemoteLocation};
 
 use super::RepoWindow;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::app::theme::{FONT_META, Theme, ui_size};
 use crate::ui::icons::glyph;
 use crate::ui::notice_bar::{notice_bar, notice_bar_header};
 use crate::ui::primitives::small_button;
@@ -70,7 +70,7 @@ pub(super) fn ssh_reconnect_bar(
                             .flex_1()
                             .min_w_0()
                             .truncate()
-                            .text_size(ui_font_size(FONT_META))
+                            .text_size(ui_size(FONT_META))
                             .text_color(rgb(t.fg_dim))
                             .child(detail),
                     )

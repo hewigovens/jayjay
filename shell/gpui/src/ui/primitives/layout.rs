@@ -2,7 +2,7 @@ use gpui::{
     AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, UniformList, div, px, rgb,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 
 /// uniform_list reserves a 15px gutter for an OS scrollbar by default; we don't render one, so collapse it to 0.
 pub(crate) fn no_scrollbar_gutter(mut list: UniformList) -> UniformList {
@@ -33,8 +33,8 @@ fn centered_message(text: SharedString, color: u32) -> AnyElement {
         .flex_1()
         .items_center()
         .justify_center()
-        .px(px(24.))
-        .text_size(ui_font_size(12.))
+        .px(ui_size(24.))
+        .text_size(ui_size(12.))
         .text_color(rgb(color))
         .child(text)
         .into_any_element()

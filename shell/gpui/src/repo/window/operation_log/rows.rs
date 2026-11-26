@@ -9,7 +9,7 @@ use jayjay_core::OpLogEntry;
 
 use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::window::{PanelBoundsSlot, RepoWindow, compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
@@ -76,11 +76,11 @@ fn operation_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(10.))
+        .gap(ui_size(10.))
         .w_full()
         .min_w_0()
-        .px(px(16.))
-        .py(px(8.))
+        .px(ui_size(16.))
+        .py(ui_size(8.))
         .bg(rgb(bg))
         .border_b_1()
         .border_color(rgb(t.sidebar_row_border))
@@ -135,13 +135,13 @@ fn operation_text(
         .flex_col()
         .flex_1()
         .min_w_0()
-        .gap(px(3.))
+        .gap(ui_size(3.))
         .child(
             div()
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .min_w_0()
                 .child(
                     div()
@@ -150,7 +150,7 @@ fn operation_text(
                         .flex_shrink_1()
                         .min_w_0()
                         .truncate()
-                        .text_size(ui_font_size(13.))
+                        .text_size(ui_size(13.))
                         .text_color(rgb(fg))
                         .child(SharedString::from(description)),
                 )

@@ -6,7 +6,7 @@ use gpui::{
 };
 use jayjay_core::ChangeInfo;
 
-use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
+use crate::app::theme::{HEADER_HEIGHT, Theme, ui_size};
 use crate::diff::DETAIL_INSET;
 use crate::diff::file_row_height;
 use crate::repo::window::dag_row::first_line;
@@ -64,13 +64,13 @@ pub(super) fn description_block(
         .overflow_y_scroll()
         .child(
             div()
-                .text_size(ui_font_size(BODY_FONT))
+                .text_size(ui_size(BODY_FONT))
                 .line_height(px(line_height))
                 .text_color(rgb(t.fg))
                 .debug_selector(|| "description-text".to_owned())
                 .child(SharedString::from(body)),
         );
-    let body_section = div().flex_shrink_0().py(px(6.)).child(scroll);
+    let body_section = div().flex_shrink_0().py(ui_size(6.)).child(scroll);
 
     let toggle = focus_ring(
         div().id("description-expansion"),
@@ -78,7 +78,7 @@ pub(super) fn description_block(
         t,
     )
     .debug_selector(|| "description-expansion".to_owned())
-    .size(px(22.))
+    .size(ui_size(22.))
     .flex_shrink_0()
     .flex()
     .items_center()
@@ -91,7 +91,7 @@ pub(super) fn description_block(
             } else {
                 icons::EXPAND_VERTICAL_SVG
             })
-            .size(px(18.))
+            .size(ui_size(18.))
             .text_color(rgb(t.fg_dim)),
     )
     .help(if expanded {
@@ -107,9 +107,9 @@ pub(super) fn description_block(
     let header = div()
         .flex()
         .items_center()
-        .gap(px(8.))
+        .gap(ui_size(8.))
         .flex_shrink_0()
-        .py(px(6.))
+        .py(ui_size(6.))
         .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
         .when(has_description, |el| {
             el.child(
@@ -117,7 +117,7 @@ pub(super) fn description_block(
                     .debug_selector(|| "description-title".to_owned())
                     .min_w_0()
                     .font_weight(gpui::FontWeight::SEMIBOLD)
-                    .text_size(ui_font_size(20.))
+                    .text_size(ui_size(20.))
                     .line_height(px(t.scaled_font_size(HEADER_HEIGHT - 12.)))
                     .text_color(rgb(t.fg))
                     .child(SharedString::from(title)),
@@ -128,7 +128,7 @@ pub(super) fn description_block(
                 div()
                     .debug_selector(|| "description-empty".to_owned())
                     .font_weight(gpui::FontWeight::SEMIBOLD)
-                    .text_size(ui_font_size(20.))
+                    .text_size(ui_size(20.))
                     .line_height(px(t.scaled_font_size(HEADER_HEIGHT - 12.)))
                     .text_color(rgb(t.fg_faint))
                     .child(jayjay_i18n::repo::no_description()),
@@ -144,7 +144,7 @@ pub(super) fn description_block(
         .flex_col()
         .min_h_0()
         .debug_selector(|| "detail-description".to_owned())
-        .px(px(DETAIL_INSET))
+        .px(px(t.scaled_font_size(DETAIL_INSET)))
         .child(header)
         .when(has_body, |el| el.child(body_section))
         .into_any_element()
@@ -172,8 +172,8 @@ fn edit_button(
         .items_center()
         .justify_center()
         .flex_shrink_0()
-        .gap(px(4.))
-        .text_size(ui_font_size(12.))
+        .gap(ui_size(4.))
+        .text_size(ui_size(12.))
         .text_color(rgb(t.fg_dim))
         .rounded_md()
         .child(icon(glyph::PENCIL, 12., t.fg_dim))

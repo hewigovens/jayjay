@@ -6,7 +6,7 @@ use gpui::{
     div, px, rgb,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::icon_label;
 
 #[derive(Clone)]
@@ -66,8 +66,8 @@ pub(crate) fn render_popup_menu<A: Clone + 'static>(
     let mut panel = div()
         .flex()
         .flex_col()
-        .min_w(px(180.))
-        .py(px(4.))
+        .min_w(ui_size(180.))
+        .py(ui_size(4.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
@@ -75,7 +75,7 @@ pub(crate) fn render_popup_menu<A: Clone + 'static>(
     for (ix, entry) in menu.entries.iter().enumerate() {
         panel = panel.child(match entry {
             PopupMenuEntry::Separator => div()
-                .my(px(4.))
+                .my(ui_size(4.))
                 .h(px(1.))
                 .bg(rgb(t.border))
                 .into_any_element(),
@@ -93,10 +93,10 @@ pub(crate) fn render_popup_menu<A: Clone + 'static>(
                     .flex()
                     .flex_row()
                     .items_center()
-                    .gap(px(8.))
-                    .px(px(10.))
-                    .py(px(5.))
-                    .text_size(ui_font_size(12.))
+                    .gap(ui_size(8.))
+                    .px(ui_size(10.))
+                    .py(ui_size(5.))
+                    .text_size(ui_size(12.))
                     .text_color(rgb(t.fg))
                     .cursor_pointer()
                     .hover(|s| s.bg(rgb(t.selected_bg)))
@@ -121,7 +121,7 @@ pub(crate) fn render_popup_menu<A: Clone + 'static>(
                 anchored()
                     .anchor(Anchor::TopLeft)
                     .position(menu.anchor)
-                    .snap_to_window_with_margin(px(6.))
+                    .snap_to_window_with_margin(px(t.scaled_font_size(6.)))
                     .child(panel),
             ),
     )

@@ -24,12 +24,11 @@ use super::super::{DragTarget, FocusStop, RepoModal, RepoWindow};
 use super::layout::{file_column_wrapper, resize_handle};
 use super::overlays::{error_overlay, pr_import_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::toolbar::{
-    LEADING_TOGGLE_ROOM, TITLE_INSET, TOOLBAR_TRAILING_INSET, TRAILING_TOGGLE_ROOM,
-    ToolbarActivity, ToolbarRepo, operation_log_strip, operation_log_toggle, sidebar_strip,
-    sidebar_toggle_button,
+    TOOLBAR_TRAILING_INSET, ToolbarActivity, ToolbarRepo, leading_toggle_room, operation_log_strip,
+    operation_log_toggle, sidebar_strip, sidebar_toggle_button, title_inset, trailing_toggle_room,
 };
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
@@ -282,11 +281,15 @@ impl Render for RepoWindow {
                 .children(change_header(self, &t, window, cx))
                 .child(columns)
         };
+        let leading_room = leading_toggle_room(&t);
+        let title_inset = title_inset(&t);
+        let trailing_room = trailing_toggle_room(&t);
+        let trailing_inset = t.scaled_font_size(TOOLBAR_TRAILING_INSET);
         let leading = sidebar_slide.width(div(), move |shown| {
-            (LEADING_TOGGLE_ROOM - sidebar_full * shown).max(TITLE_INSET)
+            (leading_room - sidebar_full * shown).max(title_inset)
         });
         let trailing = operation_log_slide.width(div(), move |shown| {
-            (TRAILING_TOGGLE_ROOM - operation_log_full * shown).max(TOOLBAR_TRAILING_INSET)
+            (trailing_room - operation_log_full * shown).max(trailing_inset)
         });
         let sidebar_room = if self.layout.sidebar_hidden {
             0.
@@ -336,7 +339,7 @@ impl Render for RepoWindow {
             ))
             .child(
                 toolbar_corner()
-                    .right(px(TOOLBAR_TRAILING_INSET))
+                    .right(ui_size(TOOLBAR_TRAILING_INSET))
                     .child(operation_log_toggle(
                         self.layout.operation_log_visible(),
                         &t,
@@ -443,7 +446,7 @@ fn toolbar_corner() -> Div {
     div()
         .absolute()
         .top_0()
-        .h(px(TOOLBAR_HEIGHT))
+        .h(ui_size(TOOLBAR_HEIGHT))
         .flex()
         .items_center()
 }

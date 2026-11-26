@@ -1,9 +1,9 @@
 use gpui::{
     FontWeight, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement, Styled,
-    div, px, rgb,
+    div, rgb,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::button;
 
@@ -13,18 +13,18 @@ pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
         .flex()
         .flex_col()
         .items_center()
-        .gap(px(12.))
+        .gap(ui_size(12.))
         .child(logo.image(80.))
         .child(
             div()
-                .text_size(ui_font_size(28.))
+                .text_size(ui_size(28.))
                 .font_weight(FontWeight::BOLD)
                 .text_color(rgb(t.fg))
                 .child("JayJay"),
         )
         .child(
             div()
-                .text_size(ui_font_size(14.))
+                .text_size(ui_size(14.))
                 .text_color(rgb(t.fg_dim))
                 .child(jayjay_i18n::settings::tagline()),
         )
@@ -32,7 +32,7 @@ pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
             div()
                 .flex()
                 .flex_row()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .child(
                     button("repo-list-open", jayjay_i18n::common::open(), t, true)
                         .debug_selector(|| "repo-list-open".to_owned())

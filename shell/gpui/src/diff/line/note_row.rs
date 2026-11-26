@@ -3,7 +3,7 @@
 use gpui::{Div, ParentElement, Pixels, SharedString, Styled, div, px, rgb, rgba};
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::diff::NoteDotKind;
 
 use super::NOTE_DOT_WIDTH;
@@ -24,7 +24,7 @@ pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
         .w(px(NOTE_DOT_WIDTH))
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .text_size(ui_font_size(9.))
+        .text_size(ui_size(9.))
         .text_color(rgb(color))
         .line_height(px(theme.code_line_height()))
         .child(SharedString::from(glyph))
@@ -54,7 +54,7 @@ pub fn note_content_row(
         .flex_1()
         .min_w_0()
         .h(px(theme.code_line_height()))
-        .px(px(16.))
+        .px(px(theme.scaled_code_font_size(16.)))
         .bg(rgba(with_alpha(accent, fill_alpha)))
         .border_l_1()
         .border_r_1()

@@ -1,9 +1,9 @@
 use gpui::{
     AnyElement, Div, InteractiveElement, MouseButton, ParentElement, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::primitives::{HelpTag, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH};
 
 /// Leading/trailing get the capsule's fully rounded outer caps; inner segments stay flat-sided.
@@ -32,14 +32,14 @@ pub(crate) fn group_item(
         .flex_none()
         .items_center()
         .justify_center()
-        .w(px(TOOLBAR_BUTTON_WIDTH))
+        .w(ui_size(TOOLBAR_BUTTON_WIDTH))
         .h_full()
         .cursor_pointer()
         .child(
             div()
                 .id("hover")
                 .absolute()
-                .inset(px(3.))
+                .inset(ui_size(3.))
                 .rounded_full()
                 .group_hover(id.clone(), move |s| s.bg(rgb(hover)))
                 .group_active(id, move |s| s.bg(rgb(pressed))),
@@ -60,7 +60,7 @@ pub(crate) fn button_group(theme: &Theme, children: Vec<AnyElement>) -> Div {
         .flex()
         .flex_row()
         .items_center()
-        .h(px(TOOLBAR_BUTTON_HEIGHT))
+        .h(ui_size(TOOLBAR_BUTTON_HEIGHT))
         .rounded_full()
         .overflow_hidden()
         .bg(rgb(theme.toolbar_group_bg))

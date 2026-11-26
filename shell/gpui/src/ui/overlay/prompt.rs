@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use super::{overlay_actions, overlay_card, overlay_header, overlay_layer};
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_size};
 use crate::ui::commit_message_editor::CommitMessageEditor;
 use crate::ui::icons::glyph;
 use crate::ui::pane_drag::pane_max;
@@ -310,7 +310,7 @@ impl TextPrompt {
         on_submit: impl Fn(&mut V, &mut Context<V>) + 'static,
     ) -> AnyElement {
         let width = self.shown.map_or(style.width, |size| size.width);
-        let mut panel = overlay_card(t, width).child(overlay_header(
+        let mut panel = overlay_card(t, width).w(px(width)).child(overlay_header(
             glyph::PENCIL,
             t.fg_dim,
             self.title.clone(),
@@ -358,7 +358,7 @@ impl TextPrompt {
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(8.))
+                .gap(ui_size(8.))
                 .children(slots.leading_actions)
                 .child(div().flex_1())
                 .child(actions)

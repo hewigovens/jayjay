@@ -12,7 +12,7 @@ use jayjay_core::UndoState;
 
 use crate::app::actions::{RestoreSelectedOperation, ToggleOperationLog};
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::{Theme, ui_size};
 use crate::repo::view_model::OperationStep;
 use crate::repo::window::picker::{below, opener};
 use crate::repo::window::{RepoWindow, operation_log_title};
@@ -166,7 +166,7 @@ pub(crate) fn render_app_menu(
     let menu = anchored()
         .anchor(Anchor::TopLeft)
         .position(anchor)
-        .snap_to_window_with_margin(px(6.))
+        .snap_to_window_with_margin(px(t.scaled_font_size(6.)))
         .child(menu_panel(rows, state.selected, t, view, cx));
 
     deferred(
@@ -193,7 +193,7 @@ pub(crate) fn menu_bar(
     let row = if title_bar::DRAWN {
         title_bar::drag_strip("app-menu-bar")
             .h(px(t.scaled_control_height(28., 12.).max(32.)))
-            .child(title_bar::system_menu_icon(Logo::load(cx).image(16.)).mr(px(6.)))
+            .child(title_bar::system_menu_icon(Logo::load(cx).image(16.)).mr(ui_size(6.)))
     } else {
         div()
             .id("app-menu-bar")
@@ -202,12 +202,12 @@ pub(crate) fn menu_bar(
             .items_center()
             .w_full()
             .h(px(t.scaled_control_height(28., 12.)))
-            .pr(px(8.))
+            .pr(ui_size(8.))
     };
     let mut row = row
         .debug_selector(|| "app-menu-bar".to_owned())
-        .gap(px(2.))
-        .pl(px(8.))
+        .gap(ui_size(2.))
+        .pl(ui_size(8.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border));
@@ -216,7 +216,7 @@ pub(crate) fn menu_bar(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(2.))
+        .gap(ui_size(2.))
         .min_w_0()
         .overflow_hidden();
     for menu in menus {
@@ -258,9 +258,9 @@ fn menu_bar_item(
         .flex()
         .items_center()
         .h(px(t.scaled_control_height(22., 12.)))
-        .px(px(8.))
+        .px(ui_size(8.))
         .rounded_sm()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_size(12.))
         .text_color(rgb(if is_open { t.fg } else { t.fg_dim }))
         .when(is_open, |row| row.bg(rgb(t.row_alt_bg)))
         .cursor_pointer()
@@ -320,9 +320,9 @@ fn menu_panel(
         .occlude()
         .flex()
         .flex_col()
-        .min_w(px(240.))
-        .max_w(px(360.))
-        .p(px(4.))
+        .min_w(ui_size(240.))
+        .max_w(ui_size(360.))
+        .p(ui_size(4.))
         .bg(rgb(t.detail_bg))
         .border_1()
         .border_color(rgb(t.border))
@@ -416,15 +416,15 @@ fn action_row(row: ActionRow<'_>) -> AnyElement {
         })
         .flex()
         .items_center()
-        .gap(px(10.))
+        .gap(ui_size(10.))
         .h(px(t.scaled_control_height(28., 12.)))
-        .px(px(10.))
-        .rounded(px(5.))
-        .text_size(ui_font_size(12.))
+        .px(ui_size(10.))
+        .rounded(ui_size(5.))
+        .text_size(ui_size(12.))
         .text_color(rgb(if disabled { t.fg_faint } else { t.fg }))
         .when(selected, |row| row.bg(rgb(t.selected_bg)))
         .when_some(checked, |row, checked| {
-            row.child(div().flex_none().w(px(12.)).when(checked, |cell| {
+            row.child(div().flex_none().w(ui_size(12.)).when(checked, |cell| {
                 cell.child(icons::icon(glyph::CHECK, 12., t.fg_dim))
             }))
         })
@@ -461,10 +461,10 @@ fn action_row(row: ActionRow<'_>) -> AnyElement {
 
 fn label(name: SharedString, t: &Theme) -> AnyElement {
     div()
-        .px(px(10.))
-        .pt(px(6.))
-        .pb(px(2.))
-        .text_size(ui_font_size(11.))
+        .px(ui_size(10.))
+        .pt(ui_size(6.))
+        .pb(ui_size(2.))
+        .text_size(ui_size(11.))
         .text_color(rgb(t.fg_faint))
         .child(name)
         .into_any_element()
@@ -472,8 +472,8 @@ fn label(name: SharedString, t: &Theme) -> AnyElement {
 
 fn separator(t: &Theme) -> AnyElement {
     div()
-        .mx(px(6.))
-        .my(px(4.))
+        .mx(ui_size(6.))
+        .my(ui_size(4.))
         .h(px(1.))
         .bg(rgb(t.border))
         .into_any_element()

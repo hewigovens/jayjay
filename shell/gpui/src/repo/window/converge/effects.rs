@@ -1,11 +1,11 @@
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 
 use super::body::ConvergeBody;
 use super::render::caption;
-use crate::app::theme::ui_font_size;
+use crate::app::theme::ui_size;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::icon_label;
@@ -37,7 +37,7 @@ impl ConvergeBody<'_> {
             div()
                 .flex()
                 .flex_col()
-                .gap(px(6.))
+                .gap(ui_size(6.))
                 .child(
                     icon_label(
                         glyph::WARNING,
@@ -46,7 +46,7 @@ impl ConvergeBody<'_> {
                         t.error_fg,
                     )
                     .debug_selector(|| "converge-blocked".to_owned())
-                    .text_size(ui_font_size(12.))
+                    .text_size(ui_size(12.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .text_color(rgb(t.error_fg)),
                 )
@@ -76,11 +76,11 @@ impl ConvergeBody<'_> {
             .flex()
             .flex_col()
             .flex_none()
-            .gap(px(6.))
-            .pt(px(10.))
+            .gap(ui_size(6.))
+            .pt(ui_size(10.))
             .border_t_1()
             .border_color(rgb(t.border))
-            .text_size(ui_font_size(11.))
+            .text_size(ui_size(11.))
             .children(blocked)
             .children(no_effects.then(|| caption(jayjay_i18n::converge::no_effects(), t)))
             .children(
@@ -117,7 +117,7 @@ impl ConvergeBody<'_> {
             div()
                 .flex()
                 .flex_col()
-                .gap(px(4.))
+                .gap(ui_size(4.))
                 .child(
                     icon_label(caret, title, 9., t.fg_dim)
                         .id(id)
@@ -129,10 +129,10 @@ impl ConvergeBody<'_> {
                 )
                 .children(expanded.then(|| {
                     div()
-                        .pl(px(15.))
+                        .pl(ui_size(15.))
                         .flex()
                         .flex_col()
-                        .gap(px(2.))
+                        .gap(ui_size(2.))
                         .whitespace_normal()
                         .children(values)
                 }))
