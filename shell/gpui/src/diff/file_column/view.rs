@@ -9,7 +9,7 @@ use jayjay_core::DiffHunk;
 use jayjay_review::{ReviewFileRollup, ReviewMode};
 
 use super::flat::{FlatBodyState, flat_body};
-use super::header::{FileHeaderState, file_column_header, file_filter_bar};
+use super::header::{FileHeaderState, file_column_divider, file_column_header, file_filter_bar};
 use super::tree::{TreeBodyState, tree_body};
 use crate::app::config;
 use crate::app::theme::theme;
@@ -126,6 +126,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             if let Some(input) = file_filter {
                 column = column.child(file_filter_bar(input, &file_filter_focus, cx, &t));
             }
+            column = column.child(file_column_divider(None, &t));
             if loading {
                 column = column.child(loading_status(
                     jayjay_i18n::diff::loading_files_ellipsis(),
@@ -191,41 +192,42 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         )
     };
 
+    let header = FileHeaderState {
+        reviewed: reviewed_count,
+        agent_marked: agent_marked
+            .iter()
+            .filter(|path| {
+                review_rollups
+                    .get(*path)
+                    .is_some_and(|rollup| *rollup != ReviewFileRollup::Unreviewed)
+            })
+            .count(),
+        count,
+        visible_count,
+        loading,
+        show_review,
+        review_mode,
+        hide_reviewed,
+        active_note_count,
+        notes_only,
+        file_filter_active: file_filter.is_some(),
+        file_filter_has_query,
+        tree_mode,
+        shows_all_files,
+        focused,
+    };
+    let progress = header.shows_review_bar().then_some((reviewed_count, count));
     let mut column = div()
         .flex()
         .flex_col()
         .size_full()
         .bg(rgb(t.detail_bg))
-        .child(file_column_header(
-            FileHeaderState {
-                reviewed: reviewed_count,
-                agent_marked: agent_marked
-                    .iter()
-                    .filter(|path| {
-                        review_rollups
-                            .get(*path)
-                            .is_some_and(|rollup| *rollup != ReviewFileRollup::Unreviewed)
-                    })
-                    .count(),
-                count,
-                visible_count,
-                loading,
-                show_review,
-                review_mode,
-                hide_reviewed,
-                active_note_count,
-                notes_only,
-                file_filter_active: file_filter.is_some(),
-                file_filter_has_query,
-                tree_mode,
-                shows_all_files,
-                focused,
-            },
-            cx,
-            &t,
-        ));
+        .child(file_column_header(header, cx, &t));
     if let Some(input) = file_filter {
         column = column.child(file_filter_bar(input, &file_filter_focus, cx, &t));
     }
-    column.child(body).into_any_element()
+    column
+        .child(file_column_divider(progress, &t))
+        .child(body)
+        .into_any_element()
 }

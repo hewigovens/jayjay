@@ -95,7 +95,7 @@ extension ChangeDetailView {
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .help(showsReviewProgress ? reviewedCountHelp : "")
+                    .help(showsReviewProgress ? reviewCountHelp : "")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -115,7 +115,14 @@ extension ChangeDetailView {
                 .padding(.bottom, 6)
             }
 
-            Divider()
+            Group {
+                if showsReviewBar {
+                    ReviewProgressBar(reviewed: reviewedPaths.count, total: reviewableDiff.count)
+                } else {
+                    Divider()
+                }
+            }
+            .frame(height: ReviewProgressBar.height, alignment: .bottom)
 
             if filteredDiff.isEmpty {
                 Spacer(minLength: 0)
@@ -216,13 +223,18 @@ extension ChangeDetailView {
         }
     }
 
-    var reviewedCountHelp: String {
+    var reviewCountHelp: String {
         let agentMarked = agentMarkedPaths.filter { path in
             fileRollups[path].map { $0 != .unreviewed } ?? false
         }.count
-        return agentMarked > 0
-            ? Localized.Diff.filesReviewedWithAgent(reviewed: reviewedPaths.count, total: reviewableDiff.count, agent: agentMarked)
-            : Localized.Repo.filesReviewedProgress(reviewed: reviewedPaths.count, total: reviewableDiff.count)
+        let reviewed = reviewedPaths.count
+        let total = reviewableDiff.count
+        return switch (reviewMode == .on, agentMarked > 0) {
+            case (true, true): Localized.Diff.filesReviewedWithAgent(reviewed: reviewed, total: total, agent: agentMarked)
+            case (true, false): Localized.Repo.filesReviewedProgress(reviewed: reviewed, total: total)
+            case (false, true): Localized.Diff.filesMarkedWithAgent(marked: reviewed, total: total, agent: agentMarked)
+            case (false, false): Localized.Diff.filesMarkedProgress(marked: reviewed, total: total)
+        }
     }
 
     private var showsReviewedCount: Bool {
@@ -234,11 +246,18 @@ extension ChangeDetailView {
         showsReviewMarks && !reviewableDiff.isEmpty && (!reviewedPaths.isEmpty || reviewMode == .on)
     }
 
+    /// Working-copy marks pick files to split or commit, so only review mode shows them as review progress.
+    private var showsReviewBar: Bool {
+        showsReviewProgress && reviewMode == .on
+    }
+
     private var fileCountLabel: String {
         var parts = if !fileFilter.isEmpty {
             [Localized.Repo.filesFiltered(shown: filteredDiff.count, total: visibleDiff.count)]
-        } else if showsReviewProgress {
+        } else if showsReviewBar {
             [Localized.Diff.reviewedOfTotal(reviewed: reviewedPaths.count, total: reviewableDiff.count)]
+        } else if showsReviewProgress {
+            [Localized.Diff.markedOfTotal(marked: reviewedPaths.count, total: reviewableDiff.count)]
         } else {
             [Localized.Repo.fileCount(count: filteredDiff.count)]
         }

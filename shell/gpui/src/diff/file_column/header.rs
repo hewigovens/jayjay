@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, ClickEvent, Context, FocusHandle, FontWeight, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, relative, rgb,
 };
 
 use crate::app::config;
@@ -29,11 +29,27 @@ pub(super) struct FileHeaderState {
     pub focused: Option<FocusStop>,
 }
 
+impl FileHeaderState {
+    /// In review mode the count reads as progress from the start, not only after the first mark.
+    pub(super) fn shows_progress(&self) -> bool {
+        !self.loading
+            && self.show_review
+            && (self.reviewed > 0 || self.review_mode == ReviewMode::On)
+    }
+
+    /// Working-copy marks pick files to split or commit, so only review mode shows them as review progress.
+    pub(super) fn shows_review_bar(&self) -> bool {
+        self.shows_progress() && self.review_mode == ReviewMode::On
+    }
+}
+
 pub(super) fn file_column_header(
     state: FileHeaderState,
     cx: &mut Context<RepoWindow>,
     t: &Theme,
 ) -> impl IntoElement {
+    let shows_progress = state.shows_progress();
+    let shows_review_bar = state.shows_review_bar();
     let FileHeaderState {
         reviewed,
         agent_marked,
@@ -51,14 +67,14 @@ pub(super) fn file_column_header(
         shows_all_files,
         focused,
     } = state;
-    // In review mode the count reads as progress from the start, not only after the first mark.
-    let shows_progress = show_review && (reviewed > 0 || review_mode == ReviewMode::On);
     let label = if loading {
         jayjay_i18n::repo::loading_ellipsis()
     } else if file_filter_has_query {
         jayjay_i18n::repo::files_filtered(visible_count, count)
-    } else if shows_progress {
+    } else if shows_review_bar {
         jayjay_i18n::diff::reviewed_of_total(reviewed, count)
+    } else if shows_progress {
+        jayjay_i18n::diff::marked_of_total(reviewed, count)
     } else {
         jayjay_i18n::repo::file_count(visible_count)
     };
@@ -83,9 +99,6 @@ pub(super) fn file_column_header(
         .px(ui_size(14.))
         .bg(rgb(t.header_bg))
         .debug_selector(|| "file-column-header".to_owned());
-    if !file_filter_active {
-        row = row.border_b_1().border_color(rgb(t.border));
-    }
 
     row = row.child(
         focus_ring(
@@ -247,16 +260,45 @@ pub(super) fn file_column_header(
     let count_label = if shows_progress {
         count_label
             .debug_selector(|| "file-reviewed-count".to_owned())
-            .help(if agent_marked > 0 {
-                jayjay_i18n::diff::files_reviewed_with_agent(reviewed, count, agent_marked)
-            } else {
-                jayjay_i18n::repo::files_reviewed_progress(reviewed, count)
+            .help(match (shows_review_bar, agent_marked > 0) {
+                (true, true) => {
+                    jayjay_i18n::diff::files_reviewed_with_agent(reviewed, count, agent_marked)
+                }
+                (true, false) => jayjay_i18n::repo::files_reviewed_progress(reviewed, count),
+                (false, true) => {
+                    jayjay_i18n::diff::files_marked_with_agent(reviewed, count, agent_marked)
+                }
+                (false, false) => jayjay_i18n::diff::files_marked_progress(reviewed, count),
             })
     } else {
         count_label
     };
     row.child(div().flex_1().min_w(ui_size(8.)))
         .child(count_label)
+}
+
+/// Always as tall as the bar, so the list does not shift when review progress appears.
+pub(super) fn file_column_divider(progress: Option<(usize, usize)>, t: &Theme) -> AnyElement {
+    let slot = div()
+        .flex_none()
+        .flex()
+        .flex_col()
+        .justify_end()
+        .h(px(2.))
+        .bg(rgb(t.header_bg));
+    match progress {
+        Some((reviewed, total)) => slot
+            .debug_selector(|| "file-review-progress".to_owned())
+            .bg(rgb(t.border))
+            .child(
+                div()
+                    .h_full()
+                    .w(relative((reviewed as f32 / total as f32).min(1.)))
+                    .bg(rgb(t.file_added_color)),
+            ),
+        _ => slot.child(div().h(px(1.)).bg(rgb(t.border))),
+    }
+    .into_any_element()
 }
 
 fn toggle_colors(active: bool, t: &Theme) -> (u32, u32) {
@@ -282,8 +324,6 @@ pub(super) fn file_filter_bar(
         .px(ui_size(14.))
         .pb(ui_size(6.))
         .bg(rgb(t.header_bg))
-        .border_b_1()
-        .border_color(rgb(t.border))
         .child(
             div()
                 .id("file-filter-input")

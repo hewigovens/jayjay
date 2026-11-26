@@ -57,6 +57,13 @@ fn review_mode_is_per_change_outside_the_working_copy(cx: &mut TestAppContext) {
         "the review mark trails the file name"
     );
     assert_eq!(review_toggle(cx), None, "@ offers no review mode toggle");
+    keys(cx, "tab space");
+    assert!(cx.debug_bounds("file-reviewed-count").is_some());
+    assert!(
+        cx.debug_bounds("file-review-progress").is_none(),
+        "@ marks pick files to split or commit, not review progress"
+    );
+    keys(cx, "space");
 
     select_change(&view, cx, "add feature");
     assert_eq!(review_toggle(cx), Some(false));
@@ -69,13 +76,20 @@ fn review_mode_is_per_change_outside_the_working_copy(cx: &mut TestAppContext) {
         "Space marked with review mode off"
     );
 
+    let row_top = cx.debug_bounds("file-row-0").expect("file row").top();
     let toggle = cx.debug_bounds("toggle-review-mode-off").expect("toggle");
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert_eq!(review_toggle(cx), Some(true));
     assert!(
-        cx.debug_bounds("file-reviewed-count").is_some(),
+        cx.debug_bounds("file-reviewed-count").is_some()
+            && cx.debug_bounds("file-review-progress").is_some(),
         "review mode shows progress from the start"
+    );
+    assert_eq!(
+        cx.debug_bounds("file-row-0").expect("file row").top(),
+        row_top,
+        "the progress bar shifted the file list"
     );
     assert!(cx.debug_bounds("mark-reviewed").is_some());
     keys(cx, "space");
