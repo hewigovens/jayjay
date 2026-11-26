@@ -88,3 +88,27 @@
 :where(.jayjay-review) .jj-notes-filter[aria-pressed="true"] {
   background: var(--jj-note-pill);
 }
+:where(.jayjay-review).jj-stacked .jj-file-sections {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+:where(.jayjay-review).jj-stacked .jj-file-section + .jj-file-section {
+  border-top: 1px solid var(--jj-border);
+}
+:where(.jayjay-review).jj-stacked .jj-file-section > .jj-file-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--jj-surface);
+}
+:where(.jayjay-review).jj-stacked .jj-file-section .jj-diff-scroll {
+  overflow-y: hidden;
+}
+:where(.jayjay-review).jj-stacked .jj-file-section:focus {
+  outline: none;
+}
+:where(.jayjay-review) .jj-fold-toggle {
+  flex: none;
+  margin-left: -6px;
+}

@@ -96,7 +96,7 @@
   :where(.jayjay-review) .jj-pane-heading {
     padding-inline: 12px;
   }
-  :where(.jayjay-review) .jj-file-title > .jj-icon:first-child {
+  :where(.jayjay-review) .jj-file-title > .jj-seti {
     display: none;
   }
   :where(.jayjay-review) .jj-header-action .jj-label {

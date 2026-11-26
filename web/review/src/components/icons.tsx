@@ -60,6 +60,19 @@ export const SidebarIcon = () => <Icon d="M2.5 3.5h11v9h-11zM6 3.5v9" />;
 export const ReviewModeIcon = () => (
   <Icon d="M2 4.5 3.5 6 6 3.5M8.5 4.75H14M2 11l1.5 1.5L6 10M8.5 11.25H14" />
 );
+export const ExpandAllIcon = () => (
+  <Icon
+    size={12}
+    d="M2.5 5.5h11v5h-11zM8 1.5v2.5M6.5 2.75 8 1.25l1.5 1.5M8 14.5V12M6.5 13.25 8 14.75l1.5-1.5"
+  />
+);
+export const CollapseAllIcon = () => (
+  <Icon
+    size={12}
+    d="M2.5 5.5h11v5h-11zM8 .75v3M6.5 2.5 8 4l1.5-1.5M8 15.25v-3M6.5 13.5 8 12l1.5 1.5"
+  />
+);
+export const OneListIcon = () => <Icon d="M2.5 2.5h11v4.5h-11zM2.5 9h11v4.5h-11z" />;
 export const ChevronIcon = ({ open }: { open: boolean }) => (
   <Icon size={10} d={open ? "M4 6l4 4 4-4" : "M6 4l4 4-4 4"} />
 );

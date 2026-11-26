@@ -8,7 +8,7 @@ import {
 } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels, ReviewBackend } from "@jayjay/review-web/types";
-import { useReviewMode } from "../../hooks/useReviewMode";
+import { useSiteSetting } from "../../hooks/useSiteSetting";
 import type { AppearanceSettings } from "../../AppearanceSettings";
 import type { Patch } from "../../Patch";
 import { DiffThemePicker } from "./DiffThemePicker";
@@ -46,7 +46,8 @@ export function PatchReview({
   const review = useReview(backend);
   const [shortcuts, setShortcuts] = useState(false);
   const [filesSlot, setFilesSlot] = useState<HTMLElement | null>(null);
-  const [reviewMode, toggleReviewMode] = useReviewMode();
+  const [reviewMode, toggleReviewMode] = useSiteSetting("reviewMode");
+  const [stacked, toggleStacked] = useSiteSetting("stacked");
   useEffect(() => {
     document.title = `${patch.title} · JayJay Diff`;
   }, [patch]);
@@ -92,6 +93,8 @@ export function PatchReview({
         filesSlot={filesSlot}
         reviewMode={reviewMode}
         onReviewMode={toggleReviewMode}
+        stacked={stacked}
+        onStacked={toggleStacked}
         onRetry={null}
       />
     </>

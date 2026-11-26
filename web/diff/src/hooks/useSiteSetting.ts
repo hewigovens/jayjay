@@ -1,9 +1,8 @@
 import { useState } from "react";
 
-const key = "jayjay.diff.reviewMode";
-
-/** The site-wide review mode, off until the reader turns it on. */
-export function useReviewMode(): [boolean, () => void] {
+/** A site-wide on/off setting kept in the browser, off until the reader turns it on. */
+export function useSiteSetting(name: string): [boolean, () => void] {
+  const key = `jayjay.diff.${name}`;
   const [on, setOn] = useState(() => {
     try {
       return localStorage.getItem(key) === "on";

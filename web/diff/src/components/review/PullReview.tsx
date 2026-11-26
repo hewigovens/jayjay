@@ -23,7 +23,7 @@ import {
   type ReviewRef,
 } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
-import { useReviewMode } from "../../hooks/useReviewMode";
+import { useSiteSetting } from "../../hooks/useSiteSetting";
 import { GitHubIcon, RefreshIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
 import { AccountMenu } from "./AccountMenu";
@@ -50,7 +50,8 @@ export function PullReview({
   pull: ReviewRef;
   onOpen: (pull: ReviewRef) => void;
 }) {
-  const [reviewMode, toggleReviewMode] = useReviewMode();
+  const [reviewMode, toggleReviewMode] = useSiteSetting("reviewMode");
+  const [stacked, toggleStacked] = useSiteSetting("stacked");
   const {
     review,
     refresh,
@@ -205,6 +206,8 @@ export function PullReview({
           }
           reviewMode={reviewMode}
           onReviewMode={toggleReviewMode}
+          stacked={stacked}
+          onStacked={toggleStacked}
           descriptionExpanded={Boolean(shown) || isCommit(pull)}
           onRetry={
             retryable

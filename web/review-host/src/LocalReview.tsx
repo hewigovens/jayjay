@@ -23,6 +23,7 @@ function storedAvatars() {
 
 export function LocalReview({ client, labels }: { client: LocalReviewClient; labels: Labels }) {
   const [avatars, setAvatars] = useState(storedAvatars);
+  const [stacked, setStacked] = useState(false);
   const imported = useRef<ReviewBundle>(null);
   const backend = useMemo<ReviewBackend>(
     () => ({
@@ -55,6 +56,8 @@ export function LocalReview({ client, labels }: { client: LocalReviewClient; lab
       labels={labels}
       savedLabel={labels.savedLocally}
       avatars={avatars}
+      stacked={stacked}
+      onStacked={() => setStacked(!stacked)}
       onRetry={() => (review.error === "worker-stopped" ? location.reload() : review.retry())}
       headerActions={
         <label className="file-button import-button">

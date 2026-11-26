@@ -134,7 +134,15 @@ fn file_list_labels() -> Vec<(&'static str, String)> {
         ("copyPath", jayjay_i18n::diff::copy_path()),
         ("reviewModeOn", jayjay_i18n::repo::turn_on_review_mode()),
         ("reviewModeOff", jayjay_i18n::repo::turn_off_review_mode()),
+        (
+            "showAllFileDiffs",
+            jayjay_i18n::settings::show_all_file_diffs(),
+        ),
         ("expandDescription", jayjay_i18n::repo::expand_description()),
+        ("expandFile", jayjay_i18n::web::expand_file()),
+        ("collapseFile", jayjay_i18n::web::collapse_file()),
+        ("expandAll", jayjay_i18n::repo::expand_all()),
+        ("collapseAll", jayjay_i18n::repo::collapse_all()),
         (
             "collapseDescription",
             jayjay_i18n::repo::collapse_description(),

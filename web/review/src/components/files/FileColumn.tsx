@@ -15,6 +15,7 @@ import {
   HideReviewedIcon,
   KeyboardIcon,
   ListIcon,
+  OneListIcon,
   ReviewModeIcon,
   SearchIcon,
   TreeIcon,
@@ -173,6 +174,8 @@ export function FileColumn({
   notes = true,
   marks = true,
   onReviewMode,
+  stacked = false,
+  onStacked,
   header,
 }: {
   overview: Overview;
@@ -189,6 +192,9 @@ export function FileColumn({
   marks?: boolean;
   /** Adds the review mode toggle to the tools. */
   onReviewMode?: () => void;
+  stacked?: boolean;
+  /** Adds the one-list toggle to the tools. */
+  onStacked?: () => void;
   header?: ReactNode;
 }) {
   const [tree, setTree] = useState(() => {
@@ -333,6 +339,11 @@ export function FileColumn({
         >
           {tree ? <TreeIcon /> : <ListIcon />}
         </ToolButton>
+        {onStacked && (
+          <ToolButton aria-pressed={stacked} label={labels.showAllFileDiffs} onClick={onStacked}>
+            <OneListIcon />
+          </ToolButton>
+        )}
         <ToolButton
           aria-pressed={searching}
           label={labels.filterFiles}

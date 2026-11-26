@@ -18,9 +18,12 @@ export function NoteComposer({
   disabled,
   save,
   cancel,
+  onBody,
 }: {
   target: { anchor: Pick<DiffAnchor, "side" | "line"> };
   initialBody?: string;
+  /** Sees each edit, so a host can restore the text if the composer remounts. */
+  onBody?: (body: string) => void;
   labels: Labels;
   disabled: boolean;
   save: (body: string) => Promise<boolean>;
@@ -61,7 +64,10 @@ export function NoteComposer({
         maxLength={16000}
         disabled={disabled}
         autoFocus
-        onChange={(event) => setBody(event.target.value)}
+        onChange={(event) => {
+          setBody(event.target.value);
+          onBody?.(event.target.value);
+        }}
       />
       <div className="jj-note-actions">
         <button type="button" disabled={disabled} onClick={cancel}>

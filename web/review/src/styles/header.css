@@ -135,6 +135,10 @@
   white-space: nowrap;
   min-width: 0;
 }
+/* The one-list controls overhang the row, so showing them doesn't push the files down. */
+:where(.jayjay-review) .jj-byline > .jj-header-actions {
+  margin-block: -5px;
+}
 :where(.jayjay-review) .jj-byline .jj-author {
   color: var(--jj-ink);
   overflow: hidden;

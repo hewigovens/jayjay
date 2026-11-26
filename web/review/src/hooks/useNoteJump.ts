@@ -6,7 +6,7 @@ export function useNoteJump(
   detail: RefObject<HTMLElement | null>,
   result: ReviewResult | null,
   pending: boolean,
-  compact: boolean,
+  list: boolean,
   loaded: ReadonlyMap<string, LoadedFile>,
 ) {
   const jumpTarget = useRef<ReviewNote | null>(null);
@@ -23,16 +23,16 @@ export function useNoteJump(
     const node = section?.querySelector<HTMLElement>(
       `.jj-diff-cell[data-side="${note.side}"][data-line="${note.line}"]`,
     );
-    // In the compact list the section may still be loading, so keep the jump until its lines render.
+    // In the one-list layout the section may still be loading, so keep the jump until its lines render.
     if (!node) {
       section?.scrollIntoView({ block: "start" });
-      if (!compact) jumpTarget.current = null;
+      if (!list) jumpTarget.current = null;
       return;
     }
     node.scrollIntoView({ block: "center" });
     node.focus({ preventScroll: true });
     jumpTarget.current = null;
-  }, [pending, result, loaded, compact]);
+  }, [pending, result, loaded, list]);
 
   return jumpTarget;
 }

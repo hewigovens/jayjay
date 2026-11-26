@@ -23,12 +23,12 @@ export function useSectionJump(
     if (pinned.current?.isConnected) pinned.current.scrollIntoView({ block: "start" });
   }, [loaded]);
 
-  return (file: number) => {
+  return (file: number, focus = true) => {
     const section = detail.current?.querySelector<HTMLElement>(
       `.jj-file-section[data-file="${file}"]`,
     );
     if (!section) return;
-    section.focus({ preventScroll: true });
+    if (focus) section.focus({ preventScroll: true });
     section.scrollIntoView({ block: "start" });
     pinned.current = section;
   };

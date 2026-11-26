@@ -26,6 +26,7 @@ export function ChangeHeader({
   hideChangeId = false,
   titleReference,
   actions,
+  controls,
   avatars,
   descriptionExpanded,
 }: {
@@ -34,6 +35,8 @@ export function ChangeHeader({
   hideChangeId?: boolean;
   titleReference?: string;
   actions?: ReactNode;
+  /** Shown in the byline before the line counts. */
+  controls?: ReactNode;
   avatars: boolean;
   descriptionExpanded: boolean;
 }) {
@@ -113,6 +116,7 @@ export function ChangeHeader({
           </>
         )}
         <span className="jj-spacer" />
+        {controls && <div className="jj-header-actions">{controls}</div>}
         <DiffStats added={added} removed={removed} />
       </div>
     </header>

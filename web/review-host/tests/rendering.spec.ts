@@ -279,3 +279,80 @@ test("a file row gives its folder under the name in the tree and the flat list",
   await page.getByRole("button", { name: "Showing files as a tree", exact: true }).click();
   await expect(row.locator(".jj-file-path")).toHaveText("src/web");
 });
+
+test("one list folds files, and a picked file shows alone until Show all returns", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await ready(page);
+  const sections = page.locator(".jj-file-section");
+  const expanded = page.locator('.jj-fold-toggle[aria-expanded="true"]');
+  const current = page.locator('.jj-file-select[aria-current="true"]');
+  const oneList = page.getByRole("button", { name: "Show all files' diffs in one list" });
+  const filesTop = () =>
+    page.locator(".jj-file-column").evaluate((column) => column.getBoundingClientRect().top);
+  const top = await filesTop();
+  await oneList.click();
+  expect(await filesTop()).toBe(top);
+  await expect(sections).toHaveCount(await page.locator(".jj-file-rows .jj-file-select").count());
+  await expect(current).toHaveCount(0);
+
+  const open = await expanded.count();
+  await sections.nth(0).locator(".jj-fold-toggle").click();
+  await expect(expanded).toHaveCount(open - 1);
+  await expect(sections.nth(0).locator(".jj-diff-row")).toHaveCount(0);
+  await page.getByRole("button", { name: "Collapse All" }).click();
+  await expect(expanded).toHaveCount(0);
+  await page.getByRole("button", { name: "Expand All" }).click();
+  await expect(expanded).toHaveCount(await sections.count());
+
+  await page.locator('.jj-file-select[data-file="2"]').click();
+  await ready(page);
+  await expect(sections).toHaveCount(0);
+  await expect(current).toHaveAttribute("data-file", "2");
+  await expect(oneList).toHaveAttribute("aria-pressed", "false");
+
+  await oneList.click();
+  await expect(oneList).toHaveAttribute("aria-pressed", "true");
+  await expect
+    .poll(() =>
+      page.locator(".jj-file-sections").evaluate((list) => {
+        const section = list.querySelector('.jj-file-section[data-file="2"]')!;
+        return Math.abs(section.getBoundingClientRect().top - list.getBoundingClientRect().top);
+      }),
+    )
+    .toBeLessThanOrEqual(1);
+
+  const rows = page.locator(".jj-file-rows .jj-file-select");
+  await rows.nth(0).focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(rows.nth(1)).toBeFocused();
+});
+
+test("one list unfolds a collapsed file to show a located note and keeps a draft when its file is picked", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await ready(page);
+  await page.getByRole("button", { name: "Add note: After 5", exact: true }).click();
+  await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Check this");
+  await page.getByRole("button", { name: "Save note", exact: true }).click();
+  await ready(page);
+  await page.getByRole("button", { name: "Show all files' diffs in one list" }).click();
+  await page.getByRole("button", { name: "Collapse All" }).click();
+  await page.locator(".jj-notes-banner button").first().click();
+  await ready(page);
+  const greeting = page.locator('.jj-diff-scroll[data-path="src/greeting.rs"]');
+  await expect(greeting.getByText("Check this")).toBeVisible();
+
+  await page.getByRole("button", { name: "Expand All" }).click();
+  await page
+    .locator('.jj-file-section[data-file="1"] button[aria-label^="Add note"]')
+    .first()
+    .click();
+  const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
+  await draft.fill("Keep this draft");
+  await page.locator('.jj-file-select[data-file="1"]').click();
+  await ready(page);
+  await expect(draft).toHaveValue("Keep this draft");
+});

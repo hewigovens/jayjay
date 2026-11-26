@@ -29,7 +29,7 @@ import { ShortcutsDialog } from "./files/ShortcutsDialog";
 import { ChangeHeader } from "./header/ChangeHeader";
 import { DiffOptionControls } from "./header/DiffOptionControls";
 import { FileHeader } from "./header/FileHeader";
-import { ListIcon, NoteIcon, SidebarIcon } from "./icons";
+import { CollapseAllIcon, ExpandAllIcon, ListIcon, NoteIcon, SidebarIcon } from "./icons";
 import { LazySection } from "./LazySection";
 import { NoteBubble } from "./notes/NoteBubble";
 import { NoteComposer, type NoteTarget } from "./notes/NoteComposer";
@@ -58,6 +58,8 @@ export function ReviewWorkspace({
   descriptionExpanded = false,
   reviewMode = true,
   onReviewMode,
+  stacked = false,
+  onStacked,
   filesSlot,
   filesHeader,
   diffThemes,
@@ -91,6 +93,10 @@ export function ReviewWorkspace({
   reviewMode?: boolean;
   /** Adds a review mode toggle to the file list's tools. */
   onReviewMode?: () => void;
+  /** Shows every file's diff in one scrolling list beside the file list, as the phone-width layout always does. */
+  stacked?: boolean;
+  /** Adds a one-list toggle to the file list's tools. */
+  onStacked?: () => void;
   /** An element in the host's toolbar that takes the phone list's Files button; the file count stays above the list. */
   filesSlot?: HTMLElement | null;
   /** Shown above the file list: at the top of the file column, or above the phone list's file count. */
@@ -112,10 +118,16 @@ export function ReviewWorkspace({
     image,
   } = review;
   const compact = useCompact();
+  // A file picked from the list shows alone with the one-list setting still on, as in the desktop app.
+  const [picked, setPicked] = useState(false);
+  const list = compact || (stacked && !picked);
   const overdue = useOverdue(pending);
   const [target, setTarget] = useState<NoteTarget | null>(null);
+  // The draft's text, which outlives its composer when switching layouts remounts the diff.
+  const draftBody = useRef("");
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const detail = useRef<HTMLElement>(null);
+  const sectionList = useRef<HTMLDivElement>(null);
   const columns = useRef<HTMLDivElement>(null);
   const diffScroll = useRef<HTMLDivElement>(null);
   const filesWidth = useFilesWidth();
@@ -132,10 +144,13 @@ export function ReviewWorkspace({
   function sections() {
     return [...(detail.current?.querySelectorAll<HTMLElement>(".jj-file-section") ?? [])];
   }
-  // Below the host's pinned bar and above the bottom of the window.
+  // Below the host's pinned bar, or the top of the wide list's scroller, and above the bottom of the window.
   function onScreen(row: HTMLElement) {
     const { top, bottom } = row.getBoundingClientRect();
-    return bottom > parseFloat(getComputedStyle(row).scrollMarginTop) + 1 && top < innerHeight;
+    const floor = compact
+      ? parseFloat(getComputedStyle(row).scrollMarginTop)
+      : (sectionList.current?.getBoundingClientRect().top ?? 0);
+    return bottom > floor + 1 && top < innerHeight;
   }
   const topSection = (rows: HTMLElement[]) => rows.findIndex(onScreen);
   function openDrawer() {
@@ -144,20 +159,40 @@ export function ReviewWorkspace({
     setDrawer(true);
   }
 
+  // Coming back to the one list keeps the reader on the file they had open.
+  const listBefore = useRef(list);
+  useLayoutEffect(() => {
+    if (list === listBefore.current) return;
+    listBefore.current = list;
+    if (list && !compact) jump(selected);
+  }, [list]);
+
+  function toggleStacked() {
+    if (picked) return setPicked(false);
+    // Leaving the one list opens the file being read.
+    const rows = sections();
+    const top = list ? Number(rows[topSection(rows)]?.dataset.file ?? selected) : selected;
+    if (top !== selected) select(top);
+    onStacked?.();
+  }
+
   const [drawerLayout, setDrawerLayout] = useState(compact);
   if (drawerLayout !== compact) {
     setDrawerLayout(compact);
     setDrawer(false);
   }
 
+  // In the one list, keys walk the diff sections unless focus is in the file list, which keeps its own order.
+  const walksSections = () =>
+    list && !columns.current?.querySelector(".jj-file-rows")?.contains(document.activeElement);
   useFileShortcuts({
     rows: () =>
-      compact
+      walksSections()
         ? sections()
         : [...(columns.current?.querySelectorAll<HTMLElement>(".jj-file-select") ?? [])],
     // Focus runs ahead of the selection while a pick renders, but a phone scroll can leave it off screen.
     current: (rows, focused) =>
-      compact
+      walksSections()
         ? focused >= 0 && onScreen(rows[focused])
           ? focused
           : topSection(rows)
@@ -166,9 +201,11 @@ export function ReviewWorkspace({
           : rows.findIndex((row) => Number(row.dataset.file) === selected),
     reviewed: (index) => reviewMode && result?.overview.files[index]?.review === "reviewed",
     go: (row) => {
-      if (compact) return jump(Number(row.dataset.file));
+      const file = Number(row.dataset.file);
+      if (!row.matches(".jj-file-select")) return jump(file);
       row.focus();
-      select(Number(row.dataset.file));
+      if (list) jump(file, false);
+      else select(file);
     },
     list: () => (compact ? null : columns.current?.querySelector(".jj-file-rows")),
     search: () => {
@@ -185,10 +222,13 @@ export function ReviewWorkspace({
     showShortcuts,
   });
 
+  // Opening another file drops a note draft elsewhere; switching layouts on the same file keeps it.
+  const pickedPath = result?.overview.files[selected]?.path;
   useEffect(() => {
-    setTarget(null);
+    if (list) return;
+    setTarget((current) => (current?.path === pickedPath ? current : null));
     setExpanded(new Set());
-  }, [compact ? undefined : path]);
+  }, [list ? undefined : pickedPath]);
   useLayoutEffect(() => {
     diffScroll.current?.scrollTo(0, 0);
   }, [path]);
@@ -202,8 +242,14 @@ export function ReviewWorkspace({
     });
   }, [result]);
 
-  const jumpTarget = useNoteJump(detail, result, pending, compact, loaded);
-  const { folded, unfold } = useFolding(detail, result, compact && reviewMode, target?.path);
+  const jumpTarget = useNoteJump(detail, result, pending, list, loaded);
+  const { folded, unfold, toggleFold, foldAll } = useFolding(
+    detail,
+    result,
+    list,
+    reviewMode,
+    target?.path,
+  );
 
   async function saveNote(body: string) {
     if (!target) return false;
@@ -227,7 +273,7 @@ export function ReviewWorkspace({
     const index = result.overview.files.findIndex((entry) => entry.path === item.note.path);
     if (index < 0) return;
     const entry = result.overview.files[index];
-    if (entry.review === "reviewed") unfold(entry.path);
+    if (folded(entry)) unfold(entry.path);
     if (
       configure(
         {
@@ -248,20 +294,20 @@ export function ReviewWorkspace({
       : result?.overview.counts.files;
   const update = (id: string, body: string) => mutate({ kind: "updateNote", id, body });
   const resolve = (id: string) => void mutate({ kind: "resolveNote", id });
-  // The compact list re-renders the marked file's section; the wide layout re-renders the open file.
+  // The one list re-renders the marked file's section, which folds; the single-file layout re-renders the open file and moves on.
   async function toggleFiles(indices: number[]) {
     if (!result || !indices.length) return;
     const { files } = result.overview;
     const marking = indices.some((index) => files[index].review !== "reviewed");
-    // The rendered rows give display order; the compact list has none and stays put.
     const order = [
       ...(columns.current?.querySelectorAll<HTMLButtonElement>(".jj-file-select") ?? []),
     ].map((row) => Number(row.dataset.file));
     if (
       !(await mutate(
         { kind: "setFiles", files: indices, reviewed: marking },
-        compact ? indices[0] : undefined,
+        list ? indices[0] : undefined,
       )) ||
+      list ||
       !marking ||
       !indices.includes(selected) ||
       target
@@ -276,11 +322,7 @@ export function ReviewWorkspace({
       ?.click();
   }
 
-  const diffs = compact
-    ? [...loaded.values()]
-    : result
-      ? [{ file: result.file, data: result }]
-      : [];
+  const diffs = list ? [...loaded.values()] : result ? [{ file: result.file, data: result }] : [];
   const { placed, rendered, unplaced } = placeNotes(
     diffs,
     result?.overview.files ?? [],
@@ -289,8 +331,7 @@ export function ReviewWorkspace({
   );
 
   const draftKey =
-    target &&
-    (compact ? loaded.get(target.path)?.key : target.path === path ? cacheKey : undefined);
+    target && (list ? loaded.get(target.path)?.key : target.path === path ? cacheKey : undefined);
   const draftLost =
     target !== null &&
     draftKey === cacheKey &&
@@ -298,6 +339,28 @@ export function ReviewWorkspace({
   useEffect(() => {
     if (draftLost) setTarget(null);
   }, [draftLost]);
+
+  const diffOptions = (
+    <DiffOptionControls
+      labels={labels}
+      options={options}
+      configure={configure}
+      allLines={allLines}
+    />
+  );
+  const listControls = (
+    <>
+      <button className="jj-header-action" onClick={() => foldAll(false)}>
+        <ExpandAllIcon />
+        <span className="jj-label">{labels.expandAll}</span>
+      </button>
+      <button className="jj-header-action" onClick={() => foldAll(true)}>
+        <CollapseAllIcon />
+        <span className="jj-label">{labels.collapseAll}</span>
+      </button>
+      {diffOptions}
+    </>
+  );
 
   function diffPane(index: number, data: ReviewResult, stale = false) {
     const summary = data.overview.files[index];
@@ -326,6 +389,10 @@ export function ReviewWorkspace({
           {composing && (
             <NoteComposer
               target={target}
+              initialBody={draftBody.current}
+              onBody={(body) => {
+                draftBody.current = body;
+              }}
               labels={labels}
               disabled={locked}
               save={saveNote}
@@ -353,7 +420,8 @@ export function ReviewWorkspace({
         </button>
       );
     };
-    const note = (anchor: DiffAnchor) =>
+    const note = (anchor: DiffAnchor) => {
+      draftBody.current = "";
       setTarget({
         file: index,
         path: filePath,
@@ -361,6 +429,7 @@ export function ReviewWorkspace({
         ignoreWhitespace: data.options.ignoreWhitespace,
         text: rendered.get(anchorKey(filePath, anchor.side, anchor.line)),
       });
+    };
     const diff = data.diff && (
       <DiffPane
         key={filePath}
@@ -424,7 +493,7 @@ export function ReviewWorkspace({
 
   return (
     <div
-      className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""} ${fill ? "jj-fill" : ""} ${!result ? "jj-review-empty" : ""}`}
+      className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : list ? "jj-stacked" : ""} ${fill ? "jj-fill" : ""} ${!result ? "jj-review-empty" : ""}`}
       aria-busy={pending}
       {...diffThemeAttributes(diffThemes)}
     >
@@ -469,6 +538,7 @@ export function ReviewWorkspace({
             hideChangeId={hideChangeId}
             titleReference={titleReference}
             actions={headerActions}
+            controls={compact ? undefined : list ? listControls : diffOptions}
             avatars={avatars}
             descriptionExpanded={descriptionExpanded}
           />
@@ -477,13 +547,18 @@ export function ReviewWorkspace({
               onShowShortcuts={onShowShortcuts ? undefined : showShortcuts}
               header={filesHeader}
               overview={result.overview}
-              selected={selected}
+              selected={list ? -1 : selected}
               disabled={disabled}
               labels={labels}
-              select={select}
+              select={(index) => {
+                setPicked(stacked);
+                select(index);
+              }}
               notes={notes}
               marks={reviewMode}
               onReviewMode={onReviewMode}
+              stacked={list}
+              onStacked={onStacked && toggleStacked}
               toggle={toggleFiles}
               filter={filter}
               setFilter={setFilter}
@@ -535,31 +610,17 @@ export function ReviewWorkspace({
                     {filesTotal}
                   </button>
                 )}
-                <div className="jj-header-actions">
-                  <DiffOptionControls
-                    labels={labels}
-                    options={options}
-                    configure={configure}
-                    allLines={allLines}
-                  />
-                </div>
+                <div className="jj-header-actions">{listControls}</div>
               </div>
             )}
-            {!compact && file && (
+            {!list && file && (
               <FileHeader
                 file={file}
                 labels={labels}
                 marks={reviewMode}
                 disabled={disabled}
                 toggleReviewed={() => toggleFiles([result.file])}
-                controls={
-                  <DiffOptionControls
-                    labels={labels}
-                    options={options}
-                    configure={configure}
-                    allLines={allLines}
-                  />
-                }
+                open
               />
             )}
             {result.syntaxUnavailable && (
@@ -568,7 +629,7 @@ export function ReviewWorkspace({
                 <button onClick={() => select(selected)}>{labels.retry}</button>
               </p>
             )}
-            {!compact && result.diff?.whitespaceOnlyHidden && (
+            {!list && result.diff?.whitespaceOnlyHidden && (
               <p className="jj-notice">{labels.whitespaceOnly}</p>
             )}
             <NotesBanner
@@ -579,8 +640,8 @@ export function ReviewWorkspace({
               update={update}
               locate={locate}
             />
-            {compact ? (
-              <div className="jj-file-sections">
+            {list ? (
+              <div className="jj-file-sections" ref={sectionList}>
                 {result.overview.files.map((entry, index) => {
                   const section = loaded.get(entry.path);
                   const current = section?.key === cacheKey;
@@ -589,6 +650,7 @@ export function ReviewWorkspace({
                       key={entry.path}
                       index={index}
                       version={cacheKey}
+                      root={compact ? undefined : sectionList}
                       loaded={current || folded(entry)}
                       load={load}
                     >
@@ -598,6 +660,7 @@ export function ReviewWorkspace({
                         marks={reviewMode}
                         disabled={disabled}
                         toggleReviewed={() => toggleFiles([index])}
+                        fold={{ folded: folded(entry), toggle: () => toggleFold(entry) }}
                       />
                       <div
                         className="jj-diff-scroll"

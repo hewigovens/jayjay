@@ -1,11 +1,11 @@
 /** @jsxRuntime automatic */
-import type { ReactNode } from "react";
 import type { Labels } from "../../model/diff";
 import type { FileSummary } from "../../model/review";
 import { MiddlePath } from "../files/MiddlePath";
 import { ReviewToggle } from "../files/ReviewToggle";
 import { ReviewStateIcon } from "../files/ReviewStateIcon";
 import { SetiIcon } from "../files/SetiIcon";
+import { ChevronIcon } from "../icons";
 import { CopyButton } from "./CopyButton";
 import { DiffStats } from "./DiffStats";
 
@@ -14,20 +14,35 @@ export function FileHeader({
   labels,
   disabled,
   toggleReviewed,
-  controls,
+  open = false,
   marks,
+  fold,
 }: {
   file: FileSummary;
   labels: Labels;
   disabled: boolean;
   toggleReviewed: () => void;
-  controls?: ReactNode;
+  /** The open file's heading, whose Reviewed checkbox is labelled. */
+  open?: boolean;
   marks: boolean;
+  /** A chevron that folds the file's diff in the one-list layout. */
+  fold?: { folded: boolean; toggle: () => void };
 }) {
   const kind = file.kind ?? "modified";
   return (
     <div className="jj-pane-heading jj-file-heading">
       <div className="jj-file-title">
+        {fold && (
+          <button
+            className="jj-tool jj-fold-toggle"
+            aria-expanded={!fold.folded}
+            aria-label={`${fold.folded ? labels.expandFile : labels.collapseFile}: ${file.path}`}
+            title={fold.folded ? labels.expandFile : labels.collapseFile}
+            onClick={fold.toggle}
+          >
+            <ChevronIcon open={!fold.folded} />
+          </button>
+        )}
         <SetiIcon icon={file.icon} />
         {file.oldPath && (
           <>
@@ -43,9 +58,8 @@ export function FileHeader({
         <DiffStats added={file.added} removed={file.removed} />
       </div>
       <div className="jj-header-actions">
-        {controls ? (
-          <>
-            {marks && (
+        {open
+          ? marks && (
               <label
                 className={`jj-header-action jj-review-action ${file.review === "reviewed" ? "jj-active" : ""}`}
               >
@@ -62,20 +76,16 @@ export function FileHeader({
                 />
                 <span className="jj-label">{labels.reviewed}</span>
               </label>
+            )
+          : marks && (
+              <ReviewToggle
+                review={file.review}
+                path={file.path}
+                labels={labels}
+                disabled={disabled}
+                toggle={toggleReviewed}
+              />
             )}
-            {controls}
-          </>
-        ) : (
-          marks && (
-            <ReviewToggle
-              review={file.review}
-              path={file.path}
-              labels={labels}
-              disabled={disabled}
-              toggle={toggleReviewed}
-            />
-          )
-        )}
       </div>
     </div>
   );
