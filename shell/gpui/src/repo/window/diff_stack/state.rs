@@ -20,6 +20,7 @@ pub(crate) struct DiffStackState {
     pub(super) shapes: HashMap<String, (Arc<FileDiff>, DiffShape)>,
     /// Body heights by path, exact for files that have been on screen.
     pub(super) heights: HashMap<String, f32>,
+    pub(super) largest_line_number: u32,
     pub(super) revision: Option<String>,
     pub(crate) plan: Option<StackPlan>,
 }

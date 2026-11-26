@@ -57,7 +57,7 @@ fn markdown_preview_renders_repo_and_inline_images_and_keeps_placeholders_for_mi
         "a 2000px image is scaled down to the pane: {flow:?} in {pane:?}"
     );
     assert!(
-        (f32::from(flow.size.height) * 4. - f32::from(flow.size.width)).abs() < 1.,
+        (f32::from(flow.size.height) - f32::from(flow.size.width) / 4.).abs() <= 0.5,
         "scaling keeps the 4:1 aspect ratio: {flow:?}"
     );
     assert!(

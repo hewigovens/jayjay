@@ -18,10 +18,8 @@ use super::wrap_cache::CachedSbsRows;
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::SbsSide;
-use crate::diff::line::REVIEW_STRIPE_WIDTH;
-use crate::diff::side_by_side::{
-    SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
-};
+use crate::diff::line::{GutterWidths, REVIEW_STRIPE_WIDTH};
+use crate::diff::side_by_side::{sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter};
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
@@ -34,6 +32,7 @@ pub(super) struct SideBySideBodyState<'a> {
     pub(super) old_bounds: PanelBoundsSlot,
     pub(super) new_bounds: PanelBoundsSlot,
     pub(super) wrap_cache: &'a DiffWrapCacheSlot,
+    pub(super) largest_line_number: u32,
     pub(super) shows_review: bool,
     pub(super) review: Option<Arc<ReviewDisplayState>>,
 }
@@ -50,6 +49,7 @@ pub(super) fn side_by_side_body(
         old_bounds,
         new_bounds,
         wrap_cache,
+        largest_line_number,
         shows_review,
         review,
     } = state;
@@ -58,6 +58,7 @@ pub(super) fn side_by_side_body(
     let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
     let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
+    let widths = GutterWidths::new(largest_line_number, advance);
     let label_cols = wrap_cache.borrow_mut().moved_label_cols(file_diff, cx);
     let rows = wrap_cache
         .borrow_mut()
@@ -73,7 +74,7 @@ pub(super) fn side_by_side_body(
     }
     let row_height = theme.code_line_height();
 
-    let old_gutter_width = SBS_GUTTER_WIDTH
+    let old_gutter_width = widths.number
         + if shows_review {
             REVIEW_STRIPE_WIDTH
         } else {
@@ -109,7 +110,7 @@ pub(super) fn side_by_side_body(
                         if let Some(cell) = review_cell {
                             row = row.child(cell);
                         }
-                        row.child(sbs_old_gutter(&rows[ix].row, &theme))
+                        row.child(sbs_old_gutter(&rows[ix].row, &theme, widths))
                             .into_any_element()
                     })
                     .collect()
@@ -127,7 +128,7 @@ pub(super) fn side_by_side_body(
             cx.processor(move |_view, range: std::ops::Range<usize>, _window, cx| {
                 range
                     .map(|ix| {
-                        let gutter = sbs_new_gutter(&rows[ix].row, &theme)
+                        let gutter = sbs_new_gutter(&rows[ix].row, &theme, widths)
                             .debug_selector(move || format!("sbs-new-gutter-row-{ix}"));
                         match rows.new_display_line(ix) {
                             Some(line_ix) => {
@@ -231,7 +232,7 @@ pub(super) fn side_by_side_body(
             cx,
         ))
         .child(div().flex_none().w(px(1.)).h_full().bg(rgb(theme.border)))
-        .child(gutter_panel(new_gutter, SBS_GUTTER_WIDTH))
+        .child(gutter_panel(new_gutter, widths.number))
         .child(content_panel(
             new_content,
             new_bounds,

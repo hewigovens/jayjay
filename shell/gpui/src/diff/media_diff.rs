@@ -1,13 +1,13 @@
 use gpui::{
-    AnyElement, Div, ImageSource, Img, InteractiveElement, IntoElement, ObjectFit, ParentElement,
-    SharedString, Styled, StyledImage, div, img, rgb,
+    AnyElement, App, Div, ImageSource, Img, InteractiveElement, IntoElement, ObjectFit,
+    ParentElement, SharedString, Styled, StyledImage, div, img, px, rgb,
 };
 use jayjay_core::HunkType;
 use jayjay_core::diff::DiffSide;
 
-use crate::app::fonts::CodeText as _;
+use crate::app::fonts::{self, CodeText as _};
 use crate::app::theme::{Theme, ui_size};
-use crate::diff::line::gutter_column;
+use crate::diff::line::{GutterWidths, gutter_column};
 
 pub(crate) fn media_diff_layout<F>(hunk_type: HunkType, t: &Theme, pane: F) -> AnyElement
 where
@@ -108,8 +108,9 @@ pub(crate) fn rich_preview_with_gutter(
     content: AnyElement,
     t: &Theme,
     shows_review: bool,
+    cx: &App,
 ) -> AnyElement {
-    diff_body_with_gutter(content, t, "rich-preview-gutter", shows_review)
+    diff_body_with_gutter(content, t, "rich-preview-gutter", shows_review, cx)
 }
 
 pub(crate) fn diff_body_with_gutter(
@@ -117,7 +118,9 @@ pub(crate) fn diff_body_with_gutter(
     t: &Theme,
     debug_selector: &'static str,
     shows_review: bool,
+    cx: &App,
 ) -> AnyElement {
+    let widths = GutterWidths::new(0, fonts::mono_advance(cx, px(t.code_font_size())));
     div()
         .flex()
         .flex_row()
@@ -127,7 +130,10 @@ pub(crate) fn diff_body_with_gutter(
         .min_w_0()
         .min_h_0()
         .bg(rgb(t.detail_bg))
-        .child(gutter_column(t, shows_review).debug_selector(move || debug_selector.to_owned()))
+        .child(
+            gutter_column(t, widths, shows_review)
+                .debug_selector(move || debug_selector.to_owned()),
+        )
         .child(
             // `.flex()` lets `content`'s own flex_1/min_h_0 bound its height instead of growing to fit.
             div().flex().flex_1().min_w_0().min_h_0().child(content),

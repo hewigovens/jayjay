@@ -11,6 +11,7 @@ use super::rows::{DiffEditRow, DiffEditRowModel};
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_size};
 use crate::diff::bounds_capture;
+use crate::diff::line::GutterWidths;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::loading::loading_label;
@@ -91,6 +92,7 @@ fn row_at(
                     editable: full_line.is_some(),
                     checked,
                     advance,
+                    widths: GutterWidths::new(card.largest_line_number, advance),
                 },
                 t,
                 cx,

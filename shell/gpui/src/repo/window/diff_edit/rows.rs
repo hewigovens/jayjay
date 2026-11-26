@@ -5,6 +5,7 @@ use jayjay_core::diff::FileDiff;
 use jayjay_core::{DiffHunk, HunkType};
 
 use super::state::hunk_supports_diff_edit;
+use crate::diff::line::GutterWidths;
 use crate::repo::view_model::DiffLoadState;
 use crate::repo::window::RepoWindow;
 
@@ -31,6 +32,7 @@ pub(super) struct DiffEditCardFile {
     pub(super) old_path: Option<Arc<str>>,
     pub(super) supported: bool,
     pub(super) diff: Option<Arc<FileDiff>>,
+    pub(super) largest_line_number: u32,
     pub(super) changed_total: u32,
 }
 
@@ -153,6 +155,9 @@ impl RepoWindow {
                     .filter(|old_path| *old_path != hunk.path)
                     .map(Arc::from),
                 supported,
+                largest_line_number: preview
+                    .as_ref()
+                    .map_or(0, |diff| GutterWidths::largest_line_number(&diff.lines)),
                 diff: preview,
                 changed_total: self.diff_edit.session.file_counts(&hunk.path).changed,
             });

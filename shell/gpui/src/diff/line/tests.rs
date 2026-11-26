@@ -45,3 +45,25 @@ fn diff_line(text: &str, conflict_kind: ConflictLineKind) -> DiffLine {
         moved: None,
     }
 }
+
+#[test]
+fn gutter_fits_the_largest_line_number_of_either_side() {
+    let numbered = |old: Option<u32>, new: Option<u32>| DiffLine {
+        old_line_no: old,
+        new_line_no: new,
+        ..diff_line("x", ConflictLineKind::None)
+    };
+    let advance = gpui::px(7.);
+    let short = GutterWidths::new(
+        GutterWidths::largest_line_number(&[numbered(Some(9), Some(9))]),
+        advance,
+    );
+    let long = GutterWidths::new(
+        GutterWidths::largest_line_number(&[numbered(Some(9999), None), numbered(None, Some(12))]),
+        advance,
+    );
+
+    assert_eq!(short.number, 2. * 7. + 7.);
+    assert_eq!(long.number, 4. * 7. + 7.);
+    assert!(long.interactive(true) > long.interactive(false));
+}

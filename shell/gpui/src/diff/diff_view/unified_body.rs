@@ -19,7 +19,7 @@ use super::state::ReviewDisplayState;
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
 use crate::diff::line::{
-    CODE_INSET, content_row, content_row_tint, gutter_column, interactive_gutter_row,
+    CODE_INSET, GutterWidths, content_row, content_row_tint, gutter_column, interactive_gutter_row,
     line_bg_color, note_content_row, note_dot_cell, note_gutter_row, review_stripe_spacer,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
@@ -35,6 +35,7 @@ pub(super) struct UnifiedBodyState<'a> {
     pub(super) bounds: PanelBoundsSlot,
     pub(super) wrap_cache: &'a DiffWrapCacheSlot,
     pub(super) notes: &'a [ReviewNoteStatus],
+    pub(super) largest_line_number: u32,
     pub(super) shows_review: bool,
     pub(super) review: Option<Arc<ReviewDisplayState>>,
 }
@@ -51,6 +52,7 @@ pub(super) fn unified_body(
         bounds,
         wrap_cache,
         notes,
+        largest_line_number,
         shows_review,
         review,
     } = state;
@@ -58,6 +60,7 @@ pub(super) fn unified_body(
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let wrap_cols = wrap_cols_from_bounds(bounds.get(), advance);
+    let widths = GutterWidths::new(largest_line_number, advance);
     let label_cols = wrap_cache.borrow_mut().moved_label_cols(file_diff, cx);
     let lines = wrap_cache
         .borrow_mut()
@@ -100,6 +103,7 @@ pub(super) fn unified_body(
                             path: &gutter_path,
                             selection: selection.as_ref(),
                             theme: &gutter_theme,
+                            widths,
                             shows_review,
                             review: gutter_review.as_ref(),
                         },
@@ -161,7 +165,7 @@ pub(super) fn unified_body(
         .h_full()
         .min_h_0()
         .child(
-            gutter_column(theme.as_ref(), shows_review)
+            gutter_column(theme.as_ref(), widths, shows_review)
                 .debug_selector(|| "diff-gutter".to_owned())
                 .child(gutter),
         )
@@ -192,6 +196,7 @@ struct GutterRowState<'a> {
     path: &'a str,
     selection: Option<&'a GutterLineSelection>,
     theme: &'a Theme,
+    widths: GutterWidths,
     shows_review: bool,
     review: Option<&'a Arc<ReviewDisplayState>>,
 }
@@ -204,11 +209,12 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
         path,
         selection,
         theme,
+        widths,
         shows_review,
         review,
     } = state;
     let DiffRenderRow::Line(w_ix) = &rendered.rows[ix] else {
-        return note_gutter_row(theme, shows_review).into_any_element();
+        return note_gutter_row(theme, widths, shows_review).into_any_element();
     };
     let w_ix = *w_ix;
     let line = &lines[w_ix];
@@ -216,9 +222,10 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
         return interactive_gutter_row(
             &line.line,
             theme,
+            widths,
             false,
             shows_review.then(|| review_stripe_spacer().into_any_element()),
-            note_dot_cell(None, theme, theme.diff_separator_bg).into_any_element(),
+            note_dot_cell(None, theme, widths, theme.diff_separator_bg).into_any_element(),
         )
         .into_any_element();
     }
@@ -235,7 +242,7 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
             cx,
         )
     });
-    let mut dot_cell = note_dot_cell(dot, theme, line_bg);
+    let mut dot_cell = note_dot_cell(dot, theme, widths, line_bg);
     if dot.is_some() {
         let dot_path = path.to_owned();
         let hover_bg = with_alpha(theme.selected_bg, 0x40);
@@ -254,6 +261,7 @@ fn gutter_row_at(state: GutterRowState<'_>, cx: &mut Context<RepoWindow>) -> Any
     let row = interactive_gutter_row(
         &line.line,
         theme,
+        widths,
         is_selected,
         review_cell,
         dot_cell.into_any_element(),

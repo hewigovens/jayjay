@@ -141,6 +141,7 @@ pub(crate) fn diff_stack(
                     unified_bounds: &view.diff.unified_bounds,
                     sbs_old_bounds: &view.diff.sbs_old_bounds,
                     sbs_new_bounds: &view.diff.sbs_new_bounds,
+                    largest_line_number: view.diff.stack.largest_line_number,
                 }
                 .render(
                     active,

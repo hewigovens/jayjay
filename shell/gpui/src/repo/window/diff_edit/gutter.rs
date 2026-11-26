@@ -6,7 +6,7 @@ use jayjay_core::diff::DiffLine;
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
-use crate::diff::line::{content_row, gutter_cell, line_bg_color};
+use crate::diff::line::{GutterWidths, content_row, line_bg_color};
 use crate::repo::window::RepoWindow;
 
 const CHECKBOX_WIDTH: f32 = 18.;
@@ -18,6 +18,7 @@ pub(super) struct DiffEditLineRowState<'a> {
     pub(super) editable: bool,
     pub(super) checked: bool,
     pub(super) advance: Pixels,
+    pub(super) widths: GutterWidths,
 }
 
 pub(super) fn diff_edit_line_row(
@@ -32,6 +33,7 @@ pub(super) fn diff_edit_line_row(
         editable,
         checked,
         advance,
+        widths,
     } = state;
     let bg = line_bg_color(line.style, line.conflict_kind, t);
     let checkbox = if editable && line.is_changed() {
@@ -60,8 +62,8 @@ pub(super) fn diff_edit_line_row(
                 .border_r_1()
                 .border_color(rgb(t.border))
                 .child(checkbox)
-                .child(gutter_cell(old_no, t, bg))
-                .child(gutter_cell(new_no, t, bg)),
+                .child(widths.number_cell(old_no, t, bg))
+                .child(widths.number_cell(new_no, t, bg)),
         )
         .child(
             div()

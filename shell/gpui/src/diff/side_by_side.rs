@@ -6,12 +6,9 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
 
 use super::line::{
-    CODE_INSET, GUTTER_NUMBER_WIDTH, conflict_stripe_overlay, gutter_cell, line_bg_color,
-    line_text_color,
+    CODE_INSET, GutterWidths, conflict_stripe_overlay, line_bg_color, line_text_color,
 };
 use super::spans::span_element;
-
-pub const SBS_GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH;
 
 pub fn sbs_row_is_separator(row: &SideBySideRow) -> bool {
     row.old.style == DiffSpanStyle::Separator
@@ -26,27 +23,29 @@ fn sbs_separator_label(row: &SideBySideRow) -> String {
     }
 }
 
-pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
+pub fn sbs_old_gutter(row: &SideBySideRow, theme: &Theme, widths: GutterWidths) -> Div {
     if sbs_row_is_separator(row) {
-        return separator_gutter(theme);
+        return separator_gutter(theme, widths);
     }
     side_gutter(
         row.old.line_no.clone(),
         row.old.style,
         row.old.conflict_kind,
         theme,
+        widths,
     )
 }
 
-pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme) -> Div {
+pub fn sbs_new_gutter(row: &SideBySideRow, theme: &Theme, widths: GutterWidths) -> Div {
     if sbs_row_is_separator(row) {
-        return separator_gutter(theme);
+        return separator_gutter(theme, widths);
     }
     side_gutter(
         row.new.line_no.clone(),
         row.new.style,
         row.new.conflict_kind,
         theme,
+        widths,
     )
 }
 
@@ -69,16 +68,17 @@ fn side_gutter(
     style: DiffSpanStyle,
     conflict_kind: ConflictLineKind,
     theme: &Theme,
+    widths: GutterWidths,
 ) -> Div {
     let bg = line_bg_color(style, conflict_kind, theme);
     div()
         .flex()
         .flex_row()
-        .w(px(SBS_GUTTER_WIDTH))
+        .w(px(widths.number))
         .h(px(theme.code_line_height()))
         .code_text(12., theme)
         .line_height(px(theme.code_line_height()))
-        .child(gutter_cell(line_no, theme, bg))
+        .child(widths.number_cell(line_no, theme, bg))
 }
 
 fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div {
@@ -116,9 +116,9 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
         .child(text_row)
 }
 
-fn separator_gutter(theme: &Theme) -> Div {
+fn separator_gutter(theme: &Theme, widths: GutterWidths) -> Div {
     div()
-        .w(px(SBS_GUTTER_WIDTH))
+        .w(px(widths.number))
         .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_separator_bg))
 }

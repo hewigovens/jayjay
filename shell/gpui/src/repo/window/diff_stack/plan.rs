@@ -9,6 +9,7 @@ use super::layout::StackLayout;
 use super::state::DiffStackState;
 use crate::app::theme::{Theme, theme};
 use crate::diff::file_status::{is_lfs, is_submodule};
+use crate::diff::line::GutterWidths;
 use crate::diff::{
     DetailMode, DiffShape, DiffViewMode, StackedRows, file_row_height, hunk_is_image,
 };
@@ -84,6 +85,7 @@ impl RepoWindow {
             stack.solo = false;
             stack.collapsed.expand_all();
             stack.heights.clear();
+            stack.largest_line_number = 0;
             stack.wraps.clear();
             stack.shapes.clear();
             stack.plan = None;
@@ -352,6 +354,9 @@ impl RepoWindow {
             Some((scanned, shape)) if Arc::ptr_eq(scanned, &diff) => *shape,
             _ => {
                 let shape = DiffShape::of(&diff);
+                stack.largest_line_number = stack
+                    .largest_line_number
+                    .max(GutterWidths::largest_line_number(&diff.lines));
                 stack
                     .shapes
                     .insert(hunk.path.clone(), (diff.clone(), shape));
@@ -369,6 +374,7 @@ impl RepoWindow {
             unified_bounds: &self.diff.unified_bounds,
             sbs_old_bounds: &self.diff.sbs_old_bounds,
             sbs_new_bounds: &self.diff.sbs_new_bounds,
+            largest_line_number: stack.largest_line_number,
         };
         let banner_height = rows.banner_height(theme(cx));
         let body_height = banner_height + rows.rows_height(theme(cx), cx);

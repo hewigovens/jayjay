@@ -56,6 +56,7 @@ pub(crate) fn markdown_diff_view(
         single_pane_layout(pane.into_any_element(), t),
         t,
         state.shows_review,
+        cx,
     )
 }
 

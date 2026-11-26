@@ -10,7 +10,7 @@ use jayjay_core::{FontSpecimen, SpecimenChange, SpecimenFile};
 use crate::app::fonts::{self, CodeText as _};
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_size};
 use crate::diff::file_status;
-use crate::diff::line::{content_row, gutter_cell, line_bg_color};
+use crate::diff::line::{GutterWidths, content_row, line_bg_color};
 use crate::repo::window::ref_chips;
 use crate::repo::window::{
     DagNodeStyle, LinePattern, NodeFlags, id_cell, paint_node, stroke_line_pattern,
@@ -25,6 +25,7 @@ fn specimen_diff_rows<'a>(
     cx: &App,
 ) -> impl Iterator<Item = Div> + 'a {
     let advance = fonts::mono_advance(cx, px(t.code_font_size()));
+    let widths = GutterWidths::new(GutterWidths::largest_line_number(lines), advance);
     lines.iter().map(move |line| {
         let bg = line_bg_color(line.style, line.conflict_kind, t);
         let number = |n: Option<u32>| n.map(|n| n.to_string()).unwrap_or_default();
@@ -33,8 +34,8 @@ fn specimen_diff_rows<'a>(
             .flex_row()
             .w_full()
             .code_text(12., t)
-            .child(gutter_cell(number(line.old_line_no), t, bg))
-            .child(gutter_cell(number(line.new_line_no), t, bg))
+            .child(widths.number_cell(number(line.old_line_no), t, bg))
+            .child(widths.number_cell(number(line.new_line_no), t, bg))
             .child(content_row(line, t, None, None, advance).flex_1())
     })
 }

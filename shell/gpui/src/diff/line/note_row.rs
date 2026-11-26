@@ -6,11 +6,15 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_size, with_alpha};
 use crate::diff::NoteDotKind;
 
-use super::NOTE_DOT_WIDTH;
-use super::gutter::interactive_gutter_width;
+use super::GutterWidths;
 
 /// `bg` must match the anchor line's gutter background (or the neutral gutter bg when blank) — a mismatch shows as a color seam against the number cells.
-pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
+pub fn note_dot_cell(
+    dot: Option<NoteDotKind>,
+    theme: &Theme,
+    widths: GutterWidths,
+    bg: u32,
+) -> Div {
     let (glyph, color): (&str, u32) = match dot {
         Some(NoteDotKind::Active) => ("●", theme.note_accent),
         Some(NoteDotKind::Resolved) => ("●", theme.fg_faint),
@@ -21,7 +25,7 @@ pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
         .flex()
         .items_center()
         .justify_center()
-        .w(px(NOTE_DOT_WIDTH))
+        .w(px(widths.dot))
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
         .text_size(ui_size(9.))
@@ -31,9 +35,9 @@ pub fn note_dot_cell(dot: Option<NoteDotKind>, theme: &Theme, bg: u32) -> Div {
 }
 
 /// Blank gutter row under a note-bubble content row — notes have no line number of their own.
-pub fn note_gutter_row(theme: &Theme, shows_review: bool) -> Div {
+pub fn note_gutter_row(theme: &Theme, widths: GutterWidths, shows_review: bool) -> Div {
     div()
-        .w(px(interactive_gutter_width(shows_review)))
+        .w(px(widths.interactive(shows_review)))
         .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_gutter_bg))
 }

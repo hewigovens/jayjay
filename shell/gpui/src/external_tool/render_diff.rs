@@ -5,9 +5,9 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb, uniform_list,
 };
 
-use crate::app::fonts::CodeText as _;
+use crate::app::fonts::{self, CodeText as _};
 use crate::app::theme::{Theme, ui_size};
-use crate::diff::line::{content_row, gutter_cell, line_bg_color};
+use crate::diff::line::{GutterWidths, content_row, line_bg_color};
 use crate::ui::primitives::button;
 
 use super::view::{ExternalToolState, ExternalToolWindow};
@@ -180,6 +180,10 @@ impl ExternalToolWindow {
         }
 
         let row_count = display.lines.len();
+        let widths = GutterWidths::new(
+            GutterWidths::largest_line_number(&display.lines),
+            fonts::mono_advance(cx, px(t.code_font_size())),
+        );
         let row_theme = Arc::new(t.clone());
         let row_path = path.clone();
         let row_list_id = SharedString::from(format!("external-lines-{path}"));
@@ -205,6 +209,7 @@ impl ExternalToolWindow {
                             editable && supports_editing && changed,
                             checked,
                             &row_theme,
+                            widths,
                             cx,
                         )
                     })
@@ -240,6 +245,7 @@ fn external_diff_row(
     selectable: bool,
     checked: bool,
     t: &Theme,
+    widths: GutterWidths,
     cx: &mut Context<ExternalToolWindow>,
 ) -> AnyElement {
     let bg = line_bg_color(line.style, line.conflict_kind, t);
@@ -276,8 +282,8 @@ fn external_diff_row(
                 .text_color(rgb(t.selected_accent))
                 .child(mark),
         )
-        .child(gutter_cell(old_no, t, bg))
-        .child(gutter_cell(new_no, t, bg))
+        .child(widths.number_cell(old_no, t, bg))
+        .child(widths.number_cell(new_no, t, bg))
         .child(content_row(line, t, None, None, px(7.2)));
     if selectable {
         row.cursor_pointer()

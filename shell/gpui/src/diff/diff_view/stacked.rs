@@ -28,6 +28,8 @@ pub(crate) struct StackedRows<'a> {
     pub(crate) unified_bounds: &'a PanelBoundsSlot,
     pub(crate) sbs_old_bounds: &'a PanelBoundsSlot,
     pub(crate) sbs_new_bounds: &'a PanelBoundsSlot,
+    /// Shared by every file in the stack, which also share one set of panel bounds.
+    pub(crate) largest_line_number: u32,
 }
 
 impl StackedRows<'_> {
@@ -90,6 +92,7 @@ impl StackedRows<'_> {
                     bounds: self.unified_bounds.clone(),
                     wrap_cache: self.wrap_cache,
                     notes: self.notes,
+                    largest_line_number: self.largest_line_number,
                     shows_review,
                     review,
                 },
@@ -105,6 +108,7 @@ impl StackedRows<'_> {
                         old_bounds: self.sbs_old_bounds.clone(),
                         new_bounds: self.sbs_new_bounds.clone(),
                         wrap_cache: self.wrap_cache,
+                        largest_line_number: self.largest_line_number,
                         shows_review,
                         review,
                     },

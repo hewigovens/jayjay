@@ -15,6 +15,7 @@ use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::{UnifiedBodyState, unified_body};
 use crate::app::theme::{Theme, theme, ui_size, with_alpha};
 use crate::diff::file_status;
+use crate::diff::line::GutterWidths;
 use crate::diff::markdown_diff::{MarkdownDiffState, MarkdownImages, markdown_diff_view};
 use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection::{self, ProjectionView};
@@ -297,6 +298,7 @@ pub fn diff_view(
                 &t,
                 "diff-loading-gutter",
                 state.shows_review,
+                cx,
             ),
             (None, _) => loading_status(jayjay_i18n::diff::loading_diff_ellipsis(), &t),
             (Some(fd), _) if fd.lines.is_empty() => {
@@ -312,6 +314,7 @@ pub fn diff_view(
                     bounds: state.unified_bounds.clone(),
                     wrap_cache: &state.wrap_cache,
                     notes: state.notes,
+                    largest_line_number: GutterWidths::largest_line_number(&fd.lines),
                     shows_review: state.shows_review,
                     review: state.review.clone(),
                 },
@@ -327,6 +330,7 @@ pub fn diff_view(
                         old_bounds: state.sbs_old_bounds.clone(),
                         new_bounds: state.sbs_new_bounds.clone(),
                         wrap_cache: &state.wrap_cache,
+                        largest_line_number: GutterWidths::largest_line_number(&fd.lines),
                         shows_review: state.shows_review,
                         review: state.review.clone(),
                     },

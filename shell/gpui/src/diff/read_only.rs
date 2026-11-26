@@ -3,9 +3,9 @@ use std::sync::Arc;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px, uniform_list};
 use jayjay_core::diff::{DEFAULT_WRAP_COLS, FileDiff, build_diff_display_lines, wrap_diff_lines};
 
-use crate::app::fonts;
+use crate::app::fonts::{self, CodeText as _};
 use crate::app::theme::Theme;
-use crate::diff::line::{content_row, gutter_cell, line_bg_color};
+use crate::diff::line::{GutterWidths, content_row, line_bg_color};
 use crate::ui::primitives::no_scrollbar_gutter;
 
 pub(crate) fn read_only_diff<V: 'static>(
@@ -19,6 +19,7 @@ pub(crate) fn read_only_diff<V: 'static>(
     let count = lines.len();
     let theme = Arc::new(theme.clone());
     let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
+    let widths = GutterWidths::new(GutterWidths::largest_line_number(&diff.lines), advance);
     let list = uniform_list(
         id,
         count,
@@ -31,20 +32,25 @@ pub(crate) fn read_only_diff<V: 'static>(
                         .flex()
                         .flex_row()
                         .w_full()
-                        .child(gutter_cell(
-                            line.old_line_no
-                                .map(|line| line.to_string())
-                                .unwrap_or_default(),
-                            &theme,
-                            bg,
-                        ))
-                        .child(gutter_cell(
-                            line.new_line_no
-                                .map(|line| line.to_string())
-                                .unwrap_or_default(),
-                            &theme,
-                            bg,
-                        ))
+                        .code_text(12., &theme)
+                        .child(
+                            widths.number_cell(
+                                line.old_line_no
+                                    .map(|line| line.to_string())
+                                    .unwrap_or_default(),
+                                &theme,
+                                bg,
+                            ),
+                        )
+                        .child(
+                            widths.number_cell(
+                                line.new_line_no
+                                    .map(|line| line.to_string())
+                                    .unwrap_or_default(),
+                                &theme,
+                                bg,
+                            ),
+                        )
                         .child(content_row(line, &theme, None, None, advance).flex_1())
                 })
                 .collect()
