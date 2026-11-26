@@ -56,9 +56,12 @@ struct DiffSection: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.appThemes) var appThemes
 
+    var headerHeight: CGFloat {
+        PaneLayout.fileRowHeight(scale: typography.interfaceScale)
+    }
+
     var body: some View {
-        let headerHeight = PaneLayout.fileRowHeight(scale: typography.interfaceScale)
-        return VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             diffHeader
                 .padding(.horizontal, PaneLayout.detailInset)
                 .frame(minHeight: headerHeight)

@@ -62,8 +62,10 @@ final class AllFileDiffsScene: SceneBase {
         app.buttons[AID.Diff.expandAllFiles].click()
         XCTAssertTrue(diffText.waitForExistence(timeout: 5), "Expand All did not bring the diffs back")
 
-        rootToggle.click()
-        XCTAssertTrue(isFolded(true))
+        XCTAssertGreaterThanOrEqual(rootToggle.frame.height, 24, "The chevron's click target is under 24 pt tall")
+        XCTAssertGreaterThanOrEqual(rootToggle.frame.width, 32, "The chevron's click target stops short of the header's leading edge")
+        rootToggle.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 6, dy: 0)).click()
+        XCTAssertTrue(isFolded(true), "A click at the header's leading edge missed the chevron")
         rootToggle.click()
         XCTAssertTrue(isFolded(false))
 

@@ -25,7 +25,8 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 3. **Dense, not cluttered** - Optimize for scanning, comparison, and repeated developer workflows.
 4. **Performance is UX** - Prefer quiet refreshes over loading spinners where possible.
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.
-6. **Palette, not terminal** - The command palette runs raw jj (`jj …` or `!…` prefix). When copy, help, or issue replies suggest a jj command, point to the palette rather than "the terminal".
+6. **Easy to hit** - [Fitts's law](https://en.wikipedia.org/wiki/Fitts%27s_law): a target is faster to reach the larger it is along the pointer's path. Give frequent controls generous click areas, let a control at a row's or pane's edge reach that edge, and keep the glyph small when density needs it; the minimum is under [Invariants](#invariants).
+7. **Palette, not terminal** - The command palette runs raw jj (`jj …` or `!…` prefix). When copy, help, or issue replies suggest a jj command, point to the palette rather than "the terminal".
 
 ## Information Hierarchy
 
@@ -73,6 +74,7 @@ A visual change that breaks one of these is a bug, whatever the design.
 - Equivalent UI roles share typography, spacing, alignment, and icon treatment through shared components. Check labels and control values together; fix the shared style instead of adding per-row overrides.
 - Text honors the configured font family and size; each shell has shared helpers for it ([SwiftUI](swiftui.md#conventions), [GPUI](gpui.md#conventions)). Changing a default never overwrites a saved preference.
 - Light and dark follow the system preference and are designed together. Judge contrast on the rendered backgrounds, including selection and tinted surfaces, and with the platform's increased-contrast setting where it has one.
+- A click target is at least 24×24 pt even when its glyph is smaller, above the HIG's [20 pt minimum](https://developer.apple.com/design/human-interface-guidelines/accessibility#Mobility) and meeting [WCAG 2.5.8](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html). The extra area overhangs the gaps around it; where neighbours sit closer, the control drawn later takes the overlap, and a pane divider keeps its grab strip at the edge. Grow the target, not the glyph or the layout: in SwiftUI a bare icon button uses `.iconButtonStyle()` instead of `.buttonStyle(.plain)` and a button group uses `.minimumHitTarget()`; in GPUI a clickable element sizes itself with `HitTarget::hit_target` or `hit_target_height`, as `icon_button` does.
 - Color never carries alone a distinction the user must make. Pair it with text, shape, or a symbol, and supply an accessibility label where the shell supports one.
 - Layout and visibility changes keep selection, scroll position, pane widths, and keyboard reachability. Animate them to preserve orientation, and respect the platform's reduced-motion setting.
 - A color, string, or layout rule owned by the Rust core (diff colors, the theme seed, change-ID prefix color, lane layout, status strings) changes in core so both shells get it.

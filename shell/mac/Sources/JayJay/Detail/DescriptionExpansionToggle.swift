@@ -10,7 +10,7 @@ struct DescriptionExpansionToggle: View {
             Image(systemName: expanded ? "arrow.down.and.line.horizontal.and.arrow.up" : "arrow.up.and.line.horizontal.and.arrow.down")
                 .jayjayFont(12, weight: .semibold)
         }
-        .buttonStyle(.plain)
+        .iconButtonStyle()
         .foregroundStyle(.secondary)
         .keyboardFocusStop(.expandDescription, action: action)
         .accessibilityIdentifier(AID.Detail.descriptionExpansion)

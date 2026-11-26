@@ -31,6 +31,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @State private var loadedKey: String?
     @State private var contentGeneration: UInt64 = 0
 
+    private static let cardPadding: CGFloat = 14
+
     private var loadKey: String {
         "\(rev)|\(hunk.path)|\(settings.ignoreWhitespace)"
     }
@@ -52,7 +54,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                     .onChange(of: heightBasis) { _, basis in heights.carry(hunk.path, to: basis) }
             }
         }
-        .padding(14)
+        .padding(Self.cardPadding)
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
@@ -66,7 +68,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     private var header: some View {
         let selection = headerSelection
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            FileCollapseToggle(path: hunk.path, isCollapsed: isCollapsed, action: onToggleCollapse)
+            FileCollapseToggle(path: hunk.path, isCollapsed: isCollapsed, leadingReach: Self.cardPadding, action: onToggleCollapse)
             if supportsDiffEdit {
                 Button(action: onToggleFile) {
                     Image(systemName: selection.state.systemImage)
@@ -75,7 +77,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                         )
                         .jayjayFont(14)
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
             }
             DiffFileTitle(hunk: hunk, stats: stats)
             if supportsDiffEdit, let partialText = selection.partialText {

@@ -203,7 +203,7 @@ struct WelcomeView: View {
             Image(systemName: pinned ? "pin.slash.fill" : "pin.fill")
                 .foregroundStyle(.tertiary)
         }
-        .buttonStyle(.plain)
+        .iconButtonStyle()
         .help(pinned ? Localized.Onboarding.unpinRepository : Localized.Onboarding.pinRepository)
 
         if !pinned {
@@ -211,7 +211,7 @@ struct WelcomeView: View {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.plain)
+            .iconButtonStyle()
             .help(Localized.Repo.removeFromRecent)
         }
     }

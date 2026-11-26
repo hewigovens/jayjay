@@ -36,6 +36,7 @@ extension ChangeDetailView {
             }
         }
         .buttonStyle(HeaderActionButtonStyle())
+        .minimumHitTarget()
         .fixedSize()
     }
 }

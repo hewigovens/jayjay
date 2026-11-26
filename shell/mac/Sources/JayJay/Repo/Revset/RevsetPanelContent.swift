@@ -212,9 +212,8 @@ struct RevsetPanelContent: View {
                         .imageScale(.small)
                         .foregroundStyle(.tertiary)
                         .frame(width: 22, height: 22)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
                 .padding(.trailing, 10)
                 .help(Localized.Repo.removeFromRecent)
                 .accessibilityLabel(Localized.Repo.removeTitleFromRecent(title: row.title))

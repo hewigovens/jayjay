@@ -31,7 +31,7 @@ struct OverviewPanelHeader<Title: View>: View {
                 Image(systemName: "xmark")
                     .jayjayFont(10, weight: .semibold)
             }
-            .buttonStyle(.plain)
+            .iconButtonStyle()
             .foregroundStyle(.secondary)
             .help(Localized.Common.close)
         }

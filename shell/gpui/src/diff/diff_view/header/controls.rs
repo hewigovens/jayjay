@@ -11,7 +11,7 @@ use crate::diff::projection;
 use crate::repo::window::ref_chips::copy_feedback_button;
 use crate::repo::window::{RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::HelpTag;
+use crate::ui::primitives::{HelpTag, MIN_HIT_TARGET};
 
 pub(super) fn file_editor_button(
     compact: bool,
@@ -37,21 +37,37 @@ pub(super) fn file_editor_button(
     .into_any_element()
 }
 
+/// The click target runs back across `leading_reach` (in `ui_size` units) to the row's edge and spans `row_height` pixels.
 pub(crate) fn collapse_chevron(
     id: impl Into<gpui::ElementId>,
     collapsed: bool,
+    leading_reach: f32,
+    row_height: f32,
     t: &Theme,
 ) -> Stateful<Div> {
+    const GLYPH: f32 = 10.;
+    const TRAILING_REACH: f32 = (MIN_HIT_TARGET - GLYPH) / 2.;
     let glyph_str = if collapsed {
         glyph::CARET_RIGHT
     } else {
         glyph::CARET_DOWN
     };
+    let glyph_height = t.scaled_font_size(GLYPH);
+    let height = row_height.max(t.scaled_font_size(MIN_HIT_TARGET));
     div()
         .id(id)
         .flex_none()
+        .flex()
+        .items_center()
+        .justify_end()
+        .w(ui_size(leading_reach + GLYPH + TRAILING_REACH))
+        .pr(ui_size(TRAILING_REACH))
+        .ml(ui_size(-leading_reach))
+        .mr(ui_size(-TRAILING_REACH))
+        .h(px(height))
+        .my(px((glyph_height - height) / 2.))
         .cursor_pointer()
-        .child(icons::icon(glyph_str, 10., t.fg_faint))
+        .child(icons::icon(glyph_str, GLYPH, t.fg_faint))
 }
 
 pub(crate) fn file_collapse_buttons(
@@ -338,24 +354,34 @@ fn header_action_with(
     active: bool,
     t: &Theme,
 ) -> Stateful<Div> {
+    const GROUP: &str = "header-action";
     let fg = if active { t.toggle_active_fg } else { t.fg_dim };
-    div()
-        .id(SharedString::from(id))
-        .debug_selector(move || id.to_owned())
+    let height = t.scaled_control_height(22., 11.);
+    let target = height.max(t.scaled_font_size(MIN_HIT_TARGET));
+    let pill = div()
         .flex()
-        .flex_none()
         .flex_row()
         .items_center()
         .gap(ui_size(4.))
         .px(ui_size(6.))
-        .h(px(t.scaled_control_height(22., 11.)))
+        .h(px(height))
         .rounded_md()
         .text_size(ui_size(11.))
         .text_color(rgb(fg))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(t.row_alt_bg)).text_color(rgb(t.fg)))
+        .group_hover(GROUP, |s| s.bg(rgb(t.row_alt_bg)).text_color(rgb(t.fg)))
         .child(icon)
-        .when_some(label, |el, label| el.child(label))
+        .when_some(label, |el, label| el.child(label));
+    div()
+        .id(SharedString::from(id))
+        .debug_selector(move || id.to_owned())
+        .group(GROUP)
+        .flex()
+        .flex_none()
+        .items_center()
+        .h(px(target))
+        .my(px((height - target) / 2.))
+        .cursor_pointer()
+        .child(pill)
 }
 
 fn mode_glyph(mode: DiffViewMode) -> &'static str {

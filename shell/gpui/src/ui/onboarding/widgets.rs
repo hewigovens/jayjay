@@ -39,18 +39,15 @@ pub(super) fn command_row(command: &'static str, t: &Theme) -> impl IntoElement 
         .bg(rgb(t.row_alt_bg))
         .text_color(rgb(t.fg))
         .child(div().code_text(13., t).child(command))
-        .child(
-            copy_icon_button(
-                SharedString::from(format!("onboarding-copy-{command}")),
-                command,
-                13.,
-                24.,
-                22.,
-                t.fg_dim,
-                t,
-            )
-            .hover(|s| s.bg(rgb(t.selected_bg))),
-        )
+        .child(copy_icon_button(
+            SharedString::from(format!("onboarding-copy-{command}")),
+            command,
+            13.,
+            24.,
+            22.,
+            t.fg_dim,
+            t.selected_bg,
+        ))
 }
 
 pub(super) fn tip(glyph_str: &'static str, text: String, t: &Theme) -> impl IntoElement {

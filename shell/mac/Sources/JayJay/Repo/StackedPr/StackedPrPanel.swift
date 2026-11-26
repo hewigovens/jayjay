@@ -156,7 +156,7 @@ struct StackedPrPanel: View {
                 Button { editingChangeId = nil } label: {
                     Image(systemName: "checkmark.circle.fill").jayjayFont(12)
                 }
-                .buttonStyle(.plain).foregroundStyle(.green)
+                .iconButtonStyle().foregroundStyle(.green)
                 .help(Localized.Repo.done)
             }
         } else {
@@ -170,7 +170,7 @@ struct StackedPrPanel: View {
                 } label: {
                     Image(systemName: "pencil").jayjayFont(10)
                 }
-                .buttonStyle(.plain).foregroundStyle(.tertiary)
+                .iconButtonStyle().foregroundStyle(.tertiary)
                 .help(Localized.Repo.editBranchName)
             }
         }

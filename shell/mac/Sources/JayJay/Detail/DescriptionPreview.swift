@@ -28,7 +28,7 @@ struct DescriptionPreview: View {
                             Text(Localized.Menu.edit).jayjayFont(12)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .iconButtonStyle()
                     .foregroundStyle(.secondary)
                     .fixedSize()
                     .keyboardFocusStop(.editDescription, action: onEdit)

@@ -35,13 +35,13 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                 Image(systemName: file.isCollapsed ? "chevron.right" : "chevron.down")
                     .frame(width: 12)
             }
-            .buttonStyle(.plain)
+            .iconButtonStyle()
             if editable {
                 Button(action: onToggleFile) {
                     Image(systemName: selectionImage)
                         .foregroundStyle(file.keepsAnyChanges ? Color.accentColor : Color.secondary.opacity(0.5))
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
                 .help(Localized.Merge.keepOrDiscardEveryChangeIn)
                 .accessibilityIdentifier(AID.ExternalTool.fileToggle(file.hunk.path))
             }

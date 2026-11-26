@@ -68,7 +68,7 @@ struct BisectBar: View {
             Image(systemName: "xmark.circle.fill")
                 .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
+        .iconButtonStyle()
         .disabled(!viewModel.bisect.canStop || (viewModel.isRefreshingInFlight && !viewModel.bisect.commandIsRunning))
         .help(Localized.Repo.stopBisectingAndRestoreTheWorking)
         .accessibilityLabel(Localized.Repo.stopBisecting)

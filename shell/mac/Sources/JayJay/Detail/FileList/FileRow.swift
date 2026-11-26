@@ -141,7 +141,7 @@ struct FileRow: View {
                         .foregroundStyle(reviewChrome.tint)
                         .jayjayFont(14)
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
                 .accessibilityIdentifier(AID.FileList.review(hunk.path))
                 .accessibilityLabel(reviewAccessibilityLabel)
             }

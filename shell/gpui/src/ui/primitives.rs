@@ -5,9 +5,9 @@ mod layout;
 mod tooltip;
 
 pub(crate) use buttons::{
-    TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, TOOLBAR_ICON_SIZE, boolean_toggle_button, button,
-    button_container, copy_icon_button, icon_button, inert_icon_button, small_button,
-    svg_icon_button,
+    HitTarget, MIN_HIT_TARGET, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, TOOLBAR_ICON_SIZE,
+    boolean_toggle_button, button, button_container, copy_icon_button, icon_button,
+    inert_icon_button, small_button, svg_icon_button, toggle_icon_button,
 };
 pub use check::CheckCircleState;
 pub(crate) use check::{

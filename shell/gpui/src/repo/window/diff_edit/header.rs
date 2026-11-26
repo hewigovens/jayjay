@@ -14,6 +14,8 @@ use crate::ui::primitives::{CheckCircleState, check_circle};
 use jayjay_core::HunkType;
 use jayjay_core::diff_edit::DiffEditCheckbox;
 
+const CARD_INSET: f32 = 14.;
+
 pub(super) fn header_bg(t: &Theme) -> u32 {
     with_alpha(t.fg, if t.is_dark { 0x12 } else { 0x0a })
 }
@@ -40,13 +42,15 @@ pub(super) fn header_row(
         .items_center()
         .gap(ui_size(8.))
         .h(px(t.code_line_height()))
-        .px(ui_size(14.))
+        .px(ui_size(CARD_INSET))
         .bg(rgba(header_fill));
     let chevron_path = card.path.to_string();
     row = row.child(
         collapse_chevron(
             SharedString::from(format!("diff-edit-chevron-{}", card.path)),
             view.diff_edit_collapsed(card.path.as_ref()),
+            CARD_INSET,
+            t.code_line_height(),
             t,
         )
         .on_click(cx.listener(move |view, _, _, cx| {

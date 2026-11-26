@@ -18,7 +18,7 @@ struct GenerateMessageButton: View {
                 Image(systemName: "sparkles")
             }
         }
-        .buttonStyle(.plain)
+        .iconButtonStyle()
         .foregroundStyle(.secondary)
         .help(viewModel.aiProvider.isEmpty ? Localized.Repo.noAiAvailable : Localized.Repo.generateWith(provider: viewModel.aiProvider))
         .disabled(isGenerating || viewModel.isCommitting || viewModel.aiProvider.isEmpty)

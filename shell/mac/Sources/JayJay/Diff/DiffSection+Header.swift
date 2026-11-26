@@ -6,7 +6,13 @@ extension DiffSection {
     var diffHeader: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             if let onToggleCollapse {
-                FileCollapseToggle(path: hunk.path, isCollapsed: isCollapsed, action: onToggleCollapse)
+                FileCollapseToggle(
+                    path: hunk.path,
+                    isCollapsed: isCollapsed,
+                    leadingReach: PaneLayout.detailInset,
+                    rowHeight: headerHeight,
+                    action: onToggleCollapse
+                )
             }
             DiffFileTitle(hunk: hunk, stats: lineStats)
             Spacer(minLength: 8)
@@ -38,6 +44,7 @@ extension DiffSection {
                 fileReviewButton
             }
             .buttonStyle(HeaderActionButtonStyle())
+            .minimumHitTarget()
             .fixedSize()
         }
         .onGeometryChange(for: Bool.self) { $0.size.width < Self.compactHeaderWidth } action: { compactHeader = $0 }

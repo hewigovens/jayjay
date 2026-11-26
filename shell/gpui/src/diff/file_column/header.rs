@@ -6,9 +6,9 @@ use gpui::{
 use crate::app::config;
 use crate::app::theme::{HEADER_HEIGHT, Theme, ui_size};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
-use crate::ui::icons::{glyph, icon};
+use crate::ui::icons::glyph;
 use crate::ui::input::{LineInput, line_input_content};
-use crate::ui::primitives::{HelpTag, icon_button};
+use crate::ui::primitives::{HelpTag, icon_button, toggle_icon_button};
 use jayjay_review::ReviewMode;
 
 pub(super) struct FileHeaderState {
@@ -87,28 +87,34 @@ pub(super) fn file_column_header(
         row = row.border_b_1().border_color(rgb(t.border));
     }
 
-    let (bg, fg) = toggle_colors(tree_mode, t);
     row = row.child(
         focus_ring(
-            icon_button("toggle-file-tree", tree_glyph, 14., 24., 22., fg, t),
+            toggle_icon_button(
+                "toggle-file-tree",
+                tree_glyph,
+                toggle_colors(tree_mode, t),
+                t,
+            ),
             focused == Some(FocusStop::TreeToggle),
             t,
         )
         .debug_selector(|| "toggle-file-tree".to_owned())
-        .bg(rgb(bg))
         .help(tree_help)
         .on_click(|_, _, cx| config::update(cx, |c| c.diff.tree_file_list ^= true)),
     );
 
-    let (bg, fg) = toggle_colors(file_filter_active, t);
     row = row.child(
         focus_ring(
-            icon_button("toggle-file-filter", glyph::SEARCH, 14., 24., 22., fg, t),
+            toggle_icon_button(
+                "toggle-file-filter",
+                glyph::SEARCH,
+                toggle_colors(file_filter_active, t),
+                t,
+            ),
             focused == Some(FocusStop::FilterToggle),
             t,
         )
         .debug_selector(|| "toggle-file-filter".to_owned())
-        .bg(rgb(bg))
         .help(jayjay_i18n::repo::filter_files())
         .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
             view.toggle_file_filter(window, cx);
@@ -119,21 +125,15 @@ pub(super) fn file_column_header(
         let on = review_mode == ReviewMode::On;
         row = row.child(
             focus_ring(
-                div()
-                    .id("toggle-review-mode")
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .w(ui_size(24.))
-                    .h(ui_size(22.))
-                    .rounded_md()
-                    .cursor_pointer()
-                    .hover(|s| s.bg(rgb(t.row_alt_bg)))
-                    .child(icon(
-                        glyph::LIST_CHECKS,
-                        14.,
-                        if on { t.selected_accent } else { t.fg_dim },
-                    )),
+                icon_button(
+                    "toggle-review-mode",
+                    glyph::LIST_CHECKS,
+                    14.,
+                    24.,
+                    22.,
+                    if on { t.selected_accent } else { t.fg_dim },
+                    t,
+                ),
                 focused == Some(FocusStop::ReviewMode),
                 t,
             )
@@ -149,15 +149,18 @@ pub(super) fn file_column_header(
         );
     }
 
-    let (bg, fg) = toggle_colors(shows_all_files, t);
     row = row.child(
-        icon_button("show-all-files", glyph::ROWS, 14., 24., 22., fg, t)
-            .debug_selector(|| "show-all-files".to_owned())
-            .bg(rgb(bg))
-            .help(jayjay_i18n::settings::show_all_file_diffs())
-            .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
-                view.toggle_show_all_file_diffs(cx);
-            })),
+        toggle_icon_button(
+            "show-all-files",
+            glyph::ROWS,
+            toggle_colors(shows_all_files, t),
+            t,
+        )
+        .debug_selector(|| "show-all-files".to_owned())
+        .help(jayjay_i18n::settings::show_all_file_diffs())
+        .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+            view.toggle_show_all_file_diffs(cx);
+        })),
     );
 
     if active_note_count > 0 {
@@ -212,23 +215,18 @@ pub(super) fn file_column_header(
 
     // The eye stays visible while the filter is on even once nothing is reviewed, or the toggle would be unrecoverable.
     if show_review && (reviewed > 0 || hide_reviewed) {
-        let (bg, fg) = toggle_colors(hide_reviewed, t);
         row = row.child(
-            icon_button(
+            toggle_icon_button(
                 "file-hide-reviewed",
                 if hide_reviewed {
                     glyph::EYE_OFF
                 } else {
                     glyph::EYE
                 },
-                14.,
-                24.,
-                22.,
-                fg,
+                toggle_colors(hide_reviewed, t),
                 t,
             )
             .debug_selector(|| "file-hide-reviewed".to_owned())
-            .bg(rgb(bg))
             .help(if hide_reviewed {
                 jayjay_i18n::repo::showing_only_unreviewed_files()
             } else {

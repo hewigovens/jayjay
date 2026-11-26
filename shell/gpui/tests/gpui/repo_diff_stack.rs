@@ -2,7 +2,7 @@ use crate::harness::{
     click, focus_view, install_test_globals, keys, load_selected_change_files, scroll_wheel,
     settle_visual,
 };
-use gpui::{Entity, Focusable, Modifiers, TestAppContext, VisualTestContext, px};
+use gpui::{Entity, Focusable, Modifiers, TestAppContext, VisualTestContext, point, px};
 use jayjay_gpui::app::actions::ToggleIgnoreWhitespace;
 use jayjay_gpui::app::{config, menus};
 use jayjay_gpui::repo::RepoWindow;
@@ -103,9 +103,27 @@ fn stacked_files_fold_to_their_headers(cx: &mut TestAppContext) {
     let open = height(cx, "README.md");
     let other = height(cx, "feature.txt");
 
-    click(cx, "stack-file-chevron-README.md");
+    let chevron = cx
+        .debug_bounds("stack-file-chevron-README.md")
+        .expect("chevron");
+    let file = cx
+        .debug_bounds(crate::harness::selector("stack-file-README.md".to_owned()))
+        .expect("stacked file");
+    assert_eq!(
+        chevron.origin.x, file.origin.x,
+        "the chevron's target stops short of the row's edge"
+    );
+    assert!(chevron.size.height >= px(24.));
+    cx.simulate_click(
+        chevron.origin + point(px(2.), chevron.size.height / 2.),
+        Modifiers::default(),
+    );
+    settle_visual(cx);
     let folded = height(cx, "README.md");
-    assert!(folded < open, "the chevron did not fold the file");
+    assert!(
+        folded < open,
+        "a click at the row's leading edge did not fold the file"
+    );
     assert_eq!(height(cx, "feature.txt"), other);
 
     click(cx, "stack-expand-all");

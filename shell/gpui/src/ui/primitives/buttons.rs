@@ -62,22 +62,53 @@ pub(crate) fn inert_icon_button(
     height: f32,
     color: u32,
 ) -> Stateful<Div> {
-    icon_button_frame(id, width, height)
-        .text_color(rgb(color))
-        .child(icons::icon(glyph_str, icon_size, color))
+    let chrome = div().child(icons::icon(glyph_str, icon_size, color));
+    icon_button_frame(id, width, height, chrome).text_color(rgb(color))
 }
 
-fn icon_button_frame(id: impl Into<SharedString>, width: f32, height: f32) -> Stateful<Div> {
+/// Takes clicks at `hit_target` size while `chrome` keeps the `width`×`height` look.
+fn icon_button_frame(
+    id: impl Into<SharedString>,
+    width: f32,
+    height: f32,
+    chrome: Div,
+) -> Stateful<Div> {
     div()
         .id(id.into())
+        .group(ICON_BUTTON_GROUP)
         .flex()
         .flex_none()
         .items_center()
         .justify_center()
-        .w(ui_size(width))
-        .h(ui_size(height))
-        .rounded_md()
+        .hit_target(width, height)
+        .child(
+            chrome
+                .flex()
+                .flex_none()
+                .items_center()
+                .justify_center()
+                .w(ui_size(width))
+                .h(ui_size(height))
+                .rounded_md(),
+        )
 }
+
+const ICON_BUTTON_GROUP: &str = "icon-button";
+
+pub(crate) const MIN_HIT_TARGET: f32 = 24.;
+
+pub(crate) trait HitTarget: Styled + Sized {
+    /// Sizes the element to at least `MIN_HIT_TARGET` square, centred on a `width`×`height` slot, which is all the layout reserves for it.
+    fn hit_target(self, width: f32, height: f32) -> Self {
+        let (target_width, target_height) = (width.max(MIN_HIT_TARGET), height.max(MIN_HIT_TARGET));
+        self.w(ui_size(target_width))
+            .h(ui_size(target_height))
+            .mx(ui_size((width - target_width) / 2.))
+            .my(ui_size((height - target_height) / 2.))
+    }
+}
+
+impl<E: Styled> HitTarget for E {}
 
 pub(crate) fn icon_button(
     id: impl Into<SharedString>,
@@ -88,9 +119,30 @@ pub(crate) fn icon_button(
     color: u32,
     theme: &Theme,
 ) -> Stateful<Div> {
-    inert_icon_button(id, glyph_str, icon_size, width, height, color)
+    hovering_icon_button(
+        id,
+        icons::icon(glyph_str, icon_size, color),
+        width,
+        height,
+        theme.row_alt_bg,
+    )
+    .text_color(rgb(color))
+}
+
+/// An icon button whose `fill` shows an on or off state.
+pub(crate) fn toggle_icon_button(
+    id: impl Into<SharedString>,
+    glyph_str: &'static str,
+    (fill, color): (u32, u32),
+    theme: &Theme,
+) -> Stateful<Div> {
+    let chrome = div()
+        .bg(rgb(fill))
+        .group_hover(ICON_BUTTON_GROUP, |s| s.bg(rgb(theme.row_alt_bg)))
+        .child(icons::icon(glyph_str, 14., color));
+    icon_button_frame(id, 24., 22., chrome)
+        .text_color(rgb(color))
         .cursor_pointer()
-        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
 }
 
 pub(crate) fn svg_icon_button(
@@ -102,17 +154,14 @@ pub(crate) fn svg_icon_button(
     color: u32,
     theme: &Theme,
 ) -> Stateful<Div> {
-    icon_button_frame(id, width, height)
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
-        .child(
-            svg()
-                .path(path)
-                .size(ui_size(icon_size))
-                .text_color(rgb(color)),
-        )
+    let icon = svg()
+        .path(path)
+        .size(ui_size(icon_size))
+        .text_color(rgb(color));
+    hovering_icon_button(id, icon, width, height, theme.row_alt_bg)
 }
 
+/// Copies `value`; `hover_fill` must stand out from the surface the button sits on.
 pub(crate) fn copy_icon_button(
     id: impl Into<SharedString>,
     value: impl Into<String>,
@@ -120,20 +169,26 @@ pub(crate) fn copy_icon_button(
     width: f32,
     height: f32,
     color: u32,
-    theme: &Theme,
+    hover_fill: u32,
 ) -> Stateful<Div> {
+    let icon = icons::icon(icons::glyph::COPY, icon_size, color);
     copy_action(
-        icon_button(
-            id,
-            icons::glyph::COPY,
-            icon_size,
-            width,
-            height,
-            color,
-            theme,
-        ),
+        hovering_icon_button(id, icon, width, height, hover_fill).text_color(rgb(color)),
         value.into(),
     )
+}
+
+fn hovering_icon_button(
+    id: impl Into<SharedString>,
+    icon: impl IntoElement,
+    width: f32,
+    height: f32,
+    hover_fill: u32,
+) -> Stateful<Div> {
+    let chrome = div()
+        .group_hover(ICON_BUTTON_GROUP, |s| s.bg(rgb(hover_fill)))
+        .child(icon);
+    icon_button_frame(id, width, height, chrome).cursor_pointer()
 }
 
 fn copy_action(element: Stateful<Div>, value: String) -> Stateful<Div> {

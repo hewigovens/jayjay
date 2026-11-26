@@ -5,6 +5,7 @@ use gpui::{
 
 use crate::app::theme::{Theme, ui_size};
 use crate::ui::icons;
+use crate::ui::primitives::HitTarget;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CheckCircleState {
@@ -22,7 +23,6 @@ pub(crate) fn check_circle(
     t: &Theme,
 ) -> Stateful<Div> {
     let mut circle = div()
-        .id(id)
         .flex_none()
         .flex()
         .items_center()
@@ -35,8 +35,7 @@ pub(crate) fn check_circle(
             t.fg_faint
         } else {
             accent
-        }))
-        .cursor_pointer();
+        }));
     match state {
         CheckCircleState::Off => {}
         CheckCircleState::Partial => {
@@ -54,7 +53,7 @@ pub(crate) fn check_circle(
                 .child(mark_svg(icons::CHECK_SVG, 0xffffff));
         }
     }
-    circle
+    check_target(id, circle)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -75,7 +74,6 @@ pub(crate) fn check_square(
     t: &Theme,
 ) -> Stateful<Div> {
     let square = div()
-        .id(id)
         .flex_none()
         .flex()
         .items_center()
@@ -88,9 +86,8 @@ pub(crate) fn check_square(
             t.fg_faint
         } else {
             accent
-        }))
-        .cursor_pointer();
-    match state {
+        }));
+    let square = match state {
         CheckSquareState::Off => square,
         CheckSquareState::Dash => square.child(mark_svg(icons::MINUS_SVG, accent)),
         CheckSquareState::Dot => square.child(
@@ -101,7 +98,20 @@ pub(crate) fn check_square(
                 .bg(rgb(accent)),
         ),
         CheckSquareState::On => square.child(mark_svg(icons::CHECK_SVG, accent)),
-    }
+    };
+    check_target(id, square)
+}
+
+fn check_target(id: impl Into<ElementId>, mark: Div) -> Stateful<Div> {
+    div()
+        .id(id)
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .hit_target(14., 14.)
+        .cursor_pointer()
+        .child(mark)
 }
 
 // An SVG mark centers geometrically; an icon-font glyph sits visibly off-center in a 14px box.

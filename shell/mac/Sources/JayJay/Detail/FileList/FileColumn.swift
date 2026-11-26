@@ -18,7 +18,7 @@ extension ChangeDetailView {
                         .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
                         .jayjayFont(14)
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
                 .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
                 .help(appSettings.treeFileList ? Localized.Repo.showingFilesAsATree : Localized.Repo.showingFilesAsAFlatList)
                 .accessibilityIdentifier(AID.FileList.treeToggle)
@@ -29,7 +29,7 @@ extension ChangeDetailView {
                         .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
                         .jayjayFont(14)
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
                 .help(Localized.Repo.filterFiles)
                 .accessibilityIdentifier(AID.FileList.filterToggle)
@@ -75,7 +75,7 @@ extension ChangeDetailView {
                             .foregroundStyle(.secondary)
                             .jayjayFont(14)
                     }
-                    .buttonStyle(.plain)
+                    .iconButtonStyle()
                     .help(Localized.Repo.splitCheckedFiles(count: reviewedPaths.count))
                     .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
@@ -87,7 +87,7 @@ extension ChangeDetailView {
                             .foregroundStyle(appSettings.hideReviewedFiles ? Color.accentColor : .secondary)
                             .jayjayFont(14)
                     }
-                    .buttonStyle(.plain)
+                    .iconButtonStyle()
                     .help(appSettings.hideReviewedFiles ? Localized.Repo.showingOnlyUnreviewedFiles : Localized.Settings.hideReviewed)
                 }
                 Spacer(minLength: 8)
@@ -109,7 +109,7 @@ extension ChangeDetailView {
                     } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
                     }
-                    .buttonStyle(.plain)
+                    .iconButtonStyle()
                 }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 6)
@@ -153,7 +153,7 @@ extension ChangeDetailView {
                 .foregroundStyle(showsAll ? Color.accentColor : .secondary)
                 .jayjayFont(14)
         }
-        .buttonStyle(.plain)
+        .iconButtonStyle()
         .keyboardFocusStop(.showAllFiles, action: toggle)
         .help(Localized.Settings.showAllFileDiffs)
         .accessibilityLabel(Localized.Repo.showAllFiles)

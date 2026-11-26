@@ -208,7 +208,7 @@ extension ChangeDetailView {
                     Image(systemName: "arrow.left.arrow.right")
                         .foregroundStyle(.orange)
                 }
-                .buttonStyle(.plain)
+                .iconButtonStyle()
                 .disabled(onReverseCompare == nil)
                 .help(Localized.Repo.reverseCompareDirection)
                 .accessibilityIdentifier(AID.Compare.reverseDirection)
@@ -232,7 +232,7 @@ extension ChangeDetailView {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
+            .iconButtonStyle()
             .help(Localized.Repo.exitCompareMode)
         }
         .padding(.horizontal, PaneLayout.detailInset)

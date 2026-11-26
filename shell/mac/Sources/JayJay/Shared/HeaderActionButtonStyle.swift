@@ -22,6 +22,7 @@ struct HeaderActionButtonStyle: ButtonStyle {
                     hovered || configuration.isPressed ? Color.primary.opacity(0.07) : .clear,
                     in: RoundedRectangle(cornerRadius: 5, style: .continuous)
                 )
+                .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
                 .onHover { hovered = $0 }
         }

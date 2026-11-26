@@ -27,7 +27,7 @@ struct CopyIconButton: View {
             }
             .foregroundStyle(copied ? Color.green : Color.secondary.opacity(label == nil ? 0.5 : 1))
         }
-        .buttonStyle(.plain)
+        .iconButtonStyle()
         .help(help)
     }
 }

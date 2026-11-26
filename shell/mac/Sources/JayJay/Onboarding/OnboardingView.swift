@@ -234,7 +234,7 @@ struct OnboardingView: View {
                 Image(systemName: "doc.on.doc")
                     .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
+            .iconButtonStyle()
         }
         .padding(10)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))

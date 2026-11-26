@@ -9,10 +9,21 @@ struct ShortcutSettingsRow: View {
     private static let cellWidth: CGFloat = 112
     private static let emptyWidth: CGFloat = 78
 
-    private var active: Bool { recorder.commandID == binding.id }
-    private var recording: Bool { active && recorder.isRecording }
-    private var pending: Bool { active && recorder.pending != nil }
-    private var editable: Bool { !binding.locked && !active }
+    private var active: Bool {
+        recorder.commandID == binding.id
+    }
+
+    private var recording: Bool {
+        active && recorder.isRecording
+    }
+
+    private var pending: Bool {
+        active && recorder.pending != nil
+    }
+
+    private var editable: Bool {
+        !binding.locked && !active
+    }
 
     var body: some View {
         VStack(spacing: 4) {
@@ -21,13 +32,17 @@ struct ShortcutSettingsRow: View {
                 Group {
                     if binding.modified {
                         Button {
-                            if let focusView = focus.view { recorder.begin(id: binding.id, view: focusView) }
+                            if let focusView = focus.view {
+                                recorder.begin(id: binding.id, view: focusView)
+                            }
                             recorder.apply(.reset, id: binding.id)
                         } label: { Image(systemName: "arrow.uturn.backward") }
-                            .buttonStyle(.plain)
+                            .iconButtonStyle()
                             .help(Localized.Shortcuts.reset)
                             .accessibilityIdentifier(AID.Shortcuts.reset(binding.id))
-                    } else { Color.clear }
+                    } else {
+                        Color.clear
+                    }
                 }
                 .frame(width: 20, height: 20)
                 cell
@@ -64,7 +79,9 @@ struct ShortcutSettingsRow: View {
 
     private var cell: some View {
         Button {
-            if let focusView = focus.view { recorder.begin(id: binding.id, view: focusView) }
+            if let focusView = focus.view {
+                recorder.begin(id: binding.id, view: focusView)
+            }
         } label: {
             keys
                 .fixedSize()
@@ -84,28 +101,29 @@ struct ShortcutSettingsRow: View {
         .accessibilityIdentifier(AID.Shortcuts.edit(binding.id))
     }
 
+    @ViewBuilder
     private var keys: some View {
-        Group {
-            if recording {
-                Group {
-                    if recorder.heldCaps.isEmpty {
-                        Text(Localized.Shortcuts.recordPrompt).jayjayFont(12).foregroundStyle(.secondary)
-                    } else { ShortcutKeyCaps(chords: [recorder.heldCaps]) }
+        if recording {
+            Group {
+                if recorder.heldCaps.isEmpty {
+                    Text(Localized.Shortcuts.recordPrompt).jayjayFont(12).foregroundStyle(.secondary)
+                } else {
+                    ShortcutKeyCaps(chords: [recorder.heldCaps])
                 }
-                .padding(.horizontal, 3)
-                .frame(minWidth: Self.emptyWidth, minHeight: 22)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(recorder.message == nil ? Color.accentColor : .red))
-            } else if pending {
-                ShortcutKeyCaps(chords: recorder.pendingChord.map { [$0.caps] } ?? [])
-            } else if binding.chords.isEmpty {
-                if !binding.locked {
-                    Image(systemName: "plus")
-                        .frame(width: Self.emptyWidth, height: 22)
-                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.secondary.opacity(0.4)))
-                }
-            } else {
-                ShortcutKeyCaps(chords: binding.chords).foregroundStyle(binding.locked ? .secondary : .primary)
             }
+            .padding(.horizontal, 3)
+            .frame(minWidth: Self.emptyWidth, minHeight: 22)
+            .overlay(RoundedRectangle(cornerRadius: 4).stroke(recorder.message == nil ? Color.accentColor : .red))
+        } else if pending {
+            ShortcutKeyCaps(chords: recorder.pendingChord.map { [$0.caps] } ?? [])
+        } else if binding.chords.isEmpty {
+            if !binding.locked {
+                Image(systemName: "plus")
+                    .frame(width: Self.emptyWidth, height: 22)
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.secondary.opacity(0.4)))
+            }
+        } else {
+            ShortcutKeyCaps(chords: binding.chords).foregroundStyle(binding.locked ? .secondary : .primary)
         }
     }
 }

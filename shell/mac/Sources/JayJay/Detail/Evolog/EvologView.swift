@@ -283,7 +283,7 @@ struct EvologView: View {
                 Image(systemName: "arrow.left.arrow.right")
                     .foregroundStyle(.orange)
             }
-            .buttonStyle(.plain)
+            .iconButtonStyle()
             .disabled(!viewModel.canReverseComparison)
             .help(Localized.Repo.reverseComparisonDirection)
             .accessibilityIdentifier(AID.Evolog.reverseComparison)

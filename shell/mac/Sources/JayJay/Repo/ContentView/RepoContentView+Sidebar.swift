@@ -91,7 +91,7 @@ extension RepoContentView {
             } label: {
                 Image(systemName: "xmark").jayjayFont(10)
             }
-            .buttonStyle(.plain).foregroundStyle(.secondary)
+            .iconButtonStyle().foregroundStyle(.secondary)
             .help(Localized.Repo.dismiss)
         }
         .padding(.horizontal, 12).padding(.vertical, 6)

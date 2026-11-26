@@ -93,11 +93,17 @@ pub(super) fn file_header(
         let path = hunk.path.clone();
         let selector = format!("stack-file-chevron-{path}");
         row = row.child(
-            collapse_chevron("stack-file-chevron", collapsed, t)
-                .debug_selector(move || selector.clone())
-                .on_click(
-                    cx.listener(move |view, _, _, cx| view.toggle_stacked_file_collapse(&path, cx)),
-                ),
+            collapse_chevron(
+                "stack-file-chevron",
+                collapsed,
+                DETAIL_INSET,
+                crate::diff::file_column::file_row_height(t),
+                t,
+            )
+            .debug_selector(move || selector.clone())
+            .on_click(
+                cx.listener(move |view, _, _, cx| view.toggle_stacked_file_collapse(&path, cx)),
+            ),
         );
     }
     row = row.child(file_icon(&hunk.path, t));

@@ -22,7 +22,7 @@ extension ChangeDetailView {
                     .jayjayFont(14)
             }
             .toggleStyle(.button)
-            .buttonStyle(.plain)
+            .iconButtonStyle()
             .keyboardFocusStop(.reviewMode, action: toggle)
             .help(isOn ? Localized.Repo.turnOffReviewMode : Localized.Repo.turnOnReviewMode)
             .accessibilityLabel(Localized.Menu.reviewMode)
