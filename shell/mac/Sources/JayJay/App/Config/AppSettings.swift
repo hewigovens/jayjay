@@ -59,7 +59,7 @@ final class AppSettings {
     // MARK: - Font
 
     static let defaultFontSize: Double = 12
-    static let fontSizeRange: ClosedRange<Double> = 9 ... 24
+    static let fontSizeRange: ClosedRange<Double> = 8 ... 24
     static let lineSpacingRange: ClosedRange<Double> = 1 ... 2
 
     var interfaceFontFamily: FontFamily {
