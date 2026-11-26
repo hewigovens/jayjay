@@ -8,8 +8,12 @@ final class ReviewModeScene: SceneBase {
         let isOn = NSPredicate(format: "value == 1")
         let isOff = NSPredicate(format: "value == 0")
         rows.firstMatch.click()
-        XCTAssertTrue(app.buttons[AID.FileList.review("wip1.txt")].waitForExistence(timeout: 10), "The working copy lost its review marks")
+        let wipReview = app.buttons[AID.FileList.review("wip1.txt")]
+        XCTAssertTrue(wipReview.waitForExistence(timeout: 10), "The working copy lost its review marks")
         XCTAssertFalse(toggle.exists, "The working copy offers a review mode toggle")
+        wipReview.click()
+        XCTAssertTrue(app.staticTexts["1/2 marked"].waitForExistence(timeout: 5), "Working-copy marks did not count as marked")
+        wipReview.click()
 
         let featureChange = rows.matching(NSPredicate(format: "value CONTAINS %@", "add feature")).firstMatch
         featureChange.click()
