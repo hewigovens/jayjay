@@ -95,6 +95,7 @@ web-pull-device-code = 在 GitHub 上输入此验证码
 web-pull-copy-open = 复制验证码并打开 GitHub
 web-pull-waiting = 正在等待你批准…
 web-pull-sign-in-failed = 登录未能完成。
+web-pull-account = GitHub 账户
 web-pull-sign-out = 退出 GitHub 登录
 web-pull-unauthorized = 你的 GitHub 登录已过期，请重新登录。
 web-pull-refresh = 刷新差异

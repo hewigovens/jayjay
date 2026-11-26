@@ -24,8 +24,9 @@ import {
 } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
 import { useReviewMode } from "../../hooks/useReviewMode";
-import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
+import { GitHubIcon, RefreshIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
+import { AccountMenu } from "./AccountMenu";
 import { DiffThemePicker } from "./DiffThemePicker";
 import { PullStatus } from "./PullStatus";
 import { ShareNotesButton } from "./ShareNotesButton";
@@ -152,11 +153,7 @@ export function PullReview({
             >
               <KeyboardIcon />
             </ToolButton>
-            {signedIn && (
-              <ToolButton label={labels.pullSignOut} onClick={signOut}>
-                <SignOutIcon />
-              </ToolButton>
-            )}
+            {signedIn && <AccountMenu labels={labels} signOut={signOut} />}
           </div>
         </nav>
       )}
@@ -178,6 +175,7 @@ export function PullReview({
           review={review}
           diffThemes={themes}
           hideChangeId={isPullRequest(pull) && shown === ""}
+          titleReference={isPullRequest(pull) ? `#${pull.number}` : undefined}
           onShowShortcuts={() => setShortcuts(true)}
           labels={labels}
           brand={

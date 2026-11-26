@@ -198,6 +198,7 @@ fn pull_labels() -> Vec<(&'static str, String)> {
         ("pullCopyOpen", jayjay_i18n::web::pull_copy_open()),
         ("pullWaiting", jayjay_i18n::web::pull_waiting()),
         ("pullSignInFailed", jayjay_i18n::web::pull_sign_in_failed()),
+        ("pullAccount", jayjay_i18n::web::pull_account()),
         ("pullSignOut", jayjay_i18n::web::pull_sign_out()),
         (
             "pullError.unauthorized",

@@ -16,6 +16,8 @@
   --jj-word-added: light-dark(#b4e6c3, #2c6140);
   --jj-word-removed: light-dark(#f6c4c6, #6d3339);
   --jj-stripe-unreviewed: light-dark(#bcd2fa, #34507e);
+  --popover: light-dark(#ffffff, #1a1e28);
+  --popover-inset: light-dark(#f5f7fa, #0b0d14);
 }
 body {
   margin: 0;
@@ -51,6 +53,10 @@ main.pull-page {
 }
 :is(.pull-page, .pull-body) > .jj-review-empty {
   min-height: 100dvh;
+}
+/* One chrome band with the bar above it. */
+.pull-page .jj-change-header {
+  background: var(--jj-page);
 }
 /* Matches the review's phone layout, which scrolls with the page. */
 @media (max-width: 680px) {

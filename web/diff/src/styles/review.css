@@ -142,7 +142,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--jj-muted);
-  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1)) / 24px var(--jj-mono);
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -206,6 +206,12 @@
   }
 }
 
+@media (min-width: 681px) {
+  .pull-page .jj-change-actions {
+    min-height: calc(22px * var(--jj-interface-scale, 1));
+    margin-left: 4px;
+  }
+}
 .pull-page .jj-change-actions:empty {
   display: none;
 }

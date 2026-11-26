@@ -44,6 +44,7 @@ export function ReviewWorkspace({
   savedLabel,
   brand,
   hideChangeId = false,
+  titleReference,
   onShowShortcuts,
   headerActions,
   errorActions,
@@ -66,6 +67,8 @@ export function ReviewWorkspace({
   savedLabel?: string;
   brand?: ReactNode;
   hideChangeId?: boolean;
+  /** Shown muted after the title when the title ends with it, such as a pull request's `#123`. */
+  titleReference?: string;
   onShowShortcuts?: () => void;
   headerActions?: ReactNode;
   errorActions?: ReactNode;
@@ -464,6 +467,7 @@ export function ReviewWorkspace({
             overview={result.overview}
             labels={labels}
             hideChangeId={hideChangeId}
+            titleReference={titleReference}
             actions={headerActions}
             avatars={avatars}
             descriptionExpanded={descriptionExpanded}

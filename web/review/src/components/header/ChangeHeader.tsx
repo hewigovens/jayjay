@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import type { Labels } from "../../model/diff";
 import type { Overview } from "../../model/review";
 import { Avatar } from "../Avatar";
-import { ExpandIcon } from "../icons";
+import { ChevronIcon } from "../icons";
 import { ToolButton } from "../ToolButton";
 import { DiffStats } from "./DiffStats";
 
@@ -24,6 +24,7 @@ export function ChangeHeader({
   overview,
   labels,
   hideChangeId = false,
+  titleReference,
   actions,
   avatars,
   descriptionExpanded,
@@ -31,6 +32,7 @@ export function ChangeHeader({
   overview: Overview;
   labels: Labels;
   hideChangeId?: boolean;
+  titleReference?: string;
   actions?: ReactNode;
   avatars: boolean;
   descriptionExpanded: boolean;
@@ -44,11 +46,21 @@ export function ChangeHeader({
         overview.timestampMillis,
       )
     : null;
+  const referenced = titleReference && overview.title.endsWith(` ${titleReference}`);
   const toggleLabel = expanded ? labels.collapseDescription : labels.expandDescription;
   return (
     <header className="jj-change-header">
       <div className="jj-change-title">
-        <h1>{overview.title}</h1>
+        <h1>
+          {referenced ? (
+            <>
+              {overview.title.slice(0, -titleReference.length - 1)}{" "}
+              <span className="jj-title-reference">{titleReference}</span>
+            </>
+          ) : (
+            overview.title
+          )}
+        </h1>
         {overview.description && (
           <ToolButton
             className="jj-description-toggle"
@@ -56,7 +68,7 @@ export function ChangeHeader({
             label={toggleLabel}
             onClick={() => setExpanded(!expanded)}
           >
-            <ExpandIcon expanded={expanded} />
+            <ChevronIcon open={expanded} />
           </ToolButton>
         )}
         {actions && <div className="jj-change-actions">{actions}</div>}

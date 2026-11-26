@@ -1,3 +1,7 @@
+:where(.jayjay-review) .jj-dialog.jj-shortcuts {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
 :where(.jayjay-review) .jj-shortcuts dl {
   display: grid;
   gap: 8px;

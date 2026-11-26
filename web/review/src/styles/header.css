@@ -19,6 +19,10 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+:where(.jayjay-review) .jj-title-reference {
+  color: var(--jj-muted);
+  font-weight: 400;
+}
 :where(.jayjay-review) .jj-change-actions {
   display: flex;
   align-items: center;

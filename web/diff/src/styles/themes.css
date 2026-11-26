@@ -2,6 +2,9 @@
   width: min(25rem, calc(100vw - 32px));
   padding: 20px;
 }
+:where(.jayjay-review) :is(.diff-theme-picker, .jj-shortcuts) {
+  background: var(--popover);
+}
 .diff-theme-picker .appearance-options {
   display: flex;
   gap: 3px;
@@ -9,7 +12,7 @@
   margin: 0 0 20px;
   border: 1px solid var(--jj-border);
   border-radius: 8px;
-  background: var(--jj-page);
+  background: var(--popover-inset);
   min-width: 0;
 }
 .appearance-options label {
@@ -38,7 +41,7 @@
   color: var(--jj-muted);
 }
 .appearance-options input:checked + span {
-  background: var(--jj-surface);
+  background: var(--popover);
   color: var(--jj-ink);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--jj-ink) 15%, transparent);
   font-weight: 600;
@@ -95,7 +98,7 @@
   overflow: auto;
   border: 1px solid var(--jj-border);
   border-radius: 12px;
-  background: var(--jj-surface);
+  background: var(--popover);
   color: var(--jj-ink);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
   font-size: inherit;
@@ -111,7 +114,7 @@
   text-align: center;
 }
 .appearance-menu > button:hover {
-  background: var(--jj-page);
+  background: var(--popover-inset);
 }
 .appearance-menu > button[aria-checked="true"] {
   color: var(--jj-accent);

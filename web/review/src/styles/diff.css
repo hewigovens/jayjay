@@ -175,24 +175,27 @@
   top: 0;
   bottom: 0;
   z-index: 1;
-  width: 5px;
+  --jj-group-stripe: var(--jj-diff-stripe, var(--jj-stripe-unreviewed));
+  --jj-group-stripe-width: 5px;
+  width: 10px;
   height: 100%;
   margin: 0;
   border: 0;
   border-radius: 0;
-  background: var(--jj-diff-stripe, var(--jj-stripe-unreviewed));
+  background: linear-gradient(var(--jj-group-stripe), var(--jj-group-stripe)) left /
+    var(--jj-group-stripe-width) 100% no-repeat;
   cursor: pointer;
-  transition: width 0.12s;
+  transition: background-size 0.12s;
 }
 :where(.jayjay-review) .jj-reviewed > .jj-group-toggle {
-  background: var(--jj-stripe-reviewed);
+  --jj-group-stripe: var(--jj-stripe-reviewed);
 }
 :where(.jayjay-review) .jj-changed_since_review > .jj-group-toggle {
-  background: var(--jj-stripe-changed);
+  --jj-group-stripe: var(--jj-stripe-changed);
 }
 :where(.jayjay-review) .jj-group-toggle:hover,
 :where(.jayjay-review) .jj-group-toggle:focus-visible {
-  width: 9px;
+  --jj-group-stripe-width: 9px;
   outline-offset: 0;
 }
 :where(.jayjay-review) .jj-group-toggle:disabled {

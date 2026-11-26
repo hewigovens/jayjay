@@ -95,6 +95,7 @@ web-pull-device-code = Enter this code on GitHub
 web-pull-copy-open = Copy code and open GitHub
 web-pull-waiting = Waiting for you to approve it…
 web-pull-sign-in-failed = Signing in didn’t finish.
+web-pull-account = GitHub account
 web-pull-sign-out = Sign out of GitHub
 web-pull-unauthorized = Your GitHub sign-in has expired. Sign in again.
 web-pull-refresh = Refresh diff

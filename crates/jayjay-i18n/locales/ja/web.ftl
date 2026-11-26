@@ -95,6 +95,7 @@ web-pull-device-code = GitHub でこのコードを入力してください
 web-pull-copy-open = コードをコピーして GitHub を開く
 web-pull-waiting = 承認を待っています…
 web-pull-sign-in-failed = サインインが完了しませんでした。
+web-pull-account = GitHub アカウント
 web-pull-sign-out = GitHub からサインアウト
 web-pull-unauthorized = GitHub のサインインの有効期限が切れました。もう一度サインインしてください。
 web-pull-refresh = 差分を更新

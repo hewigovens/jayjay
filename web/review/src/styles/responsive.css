@@ -3,7 +3,7 @@
     opacity: 0;
   }
   :where(.jayjay-review) .jj-group-toggle {
-    width: 7px;
+    --jj-group-stripe-width: 7px;
   }
   :where(.jayjay-review) .jj-tool,
   :where(.jayjay-review) .jj-header-action {

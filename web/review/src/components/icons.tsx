@@ -85,14 +85,4 @@ export const NoteIcon = () => (
     d="M2.5 3.25c0-.55.45-1 1-1h9c.55 0 1 .45 1 1v6.5c0 .55-.45 1-1 1H7l-3 2.5v-2.5h-.5c-.55 0-1-.45-1-1v-6.5ZM5 5.5h6M5 8h4"
   />
 );
-export const ExpandIcon = ({ expanded }: { expanded: boolean }) => (
-  <Icon
-    size={12}
-    d={
-      expanded
-        ? "M8 2v4.5M5.5 4 8 6.5 10.5 4M2.5 8h11M8 14V9.5M5.5 12 8 9.5l2.5 2.5"
-        : "M8 6.5V2M5.5 4.5 8 2l2.5 2.5M2.5 8h11M8 9.5V14M5.5 11.5 8 14l2.5-2.5"
-    }
-  />
-);
 export const CloseIcon = () => <Icon size={12} d="M4 4l8 8M12 4l-8 8" />;

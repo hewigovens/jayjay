@@ -1,6 +1,6 @@
 import { ToolButton, ToolLink } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
-import { SyncIcon } from "../icons";
+import { SyncFailedIcon, SyncIcon, SyncedIcon } from "../icons";
 import { DeviceCodeDialog } from "../sign-in/DeviceCodeDialog";
 import { useDeviceSignIn } from "../../hooks/useDeviceSignIn";
 import type { SyncFailure } from "../../hooks/usePullReview";
@@ -27,7 +27,7 @@ export function SyncViewedButton({
         className="pull-sync-failed"
         label={labels.pullSyncViewedRestricted}
       >
-        <SyncIcon />
+        <SyncFailedIcon />
       </ToolLink>
     );
   if (syncing) {
@@ -39,7 +39,7 @@ export function SyncViewedButton({
         title={label}
         aria-label={label}
       >
-        <SyncIcon />
+        {failure ? <SyncFailedIcon /> : <SyncedIcon />}
       </span>
     );
   }

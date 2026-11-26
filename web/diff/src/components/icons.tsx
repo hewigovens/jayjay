@@ -22,6 +22,12 @@ export const GitHubIcon = ({ size = 14 }: IconProps) => (
 export const ShareIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M8 10V1.75M5 4.75l3-3 3 3M4.75 7h-2v7h10.5V7h-2" />
 );
+export const AccountIcon = ({ size }: IconProps) => (
+  <Icon
+    size={size}
+    d="M8 8a2.75 2.75 0 1 0 0-5.5A2.75 2.75 0 0 0 8 8ZM2.75 14a5.25 5.25 0 0 1 10.5 0"
+  />
+);
 export const SignOutIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M6.5 2.5h-3v11h3M10.5 5l3 3-3 3M13.5 8h-7" />
 );
@@ -36,6 +42,13 @@ export const SyncIcon = ({ size }: IconProps) => (
     size={size}
     d="M4.5 11.5H4a3 3 0 0 1-.3-6 4.5 4.5 0 0 1 8.6 0 3 3 0 0 1-.3 6h-.5M8 14V7.5M5.5 10 8 7.5 10.5 10"
   />
+);
+const cloud = "M4 13a3 3 0 0 1-.3-6 4.5 4.5 0 0 1 8.6 0 3 3 0 0 1-.3 6Z";
+export const SyncedIcon = ({ size }: IconProps) => (
+  <Icon size={size} d={`${cloud}M6 10l1.5 1.5 2.5-2.5`} />
+);
+export const SyncFailedIcon = ({ size }: IconProps) => (
+  <Icon size={size} d={`${cloud}M6.5 8.5l3 3M9.5 8.5l-3 3`} />
 );
 export const StackIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M8 2l6 3-6 3-6-3 6-3ZM2 8l6 3 6-3M2 11l6 3 6-3" />
