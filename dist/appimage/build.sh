@@ -3,14 +3,15 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 <jayjay-gpui binary> <x86_64|aarch64> <output dir> [ssh-helpers.json]" >&2
+  echo "usage: $0 <jayjay-gpui binary> <x86_64|aarch64> <output dir> <Licenses.html> [ssh-helpers.json]" >&2
   exit 2
 }
-[[ $# -eq 3 || $# -eq 4 ]] || usage
+[[ $# -eq 4 || $# -eq 5 ]] || usage
 binary=$1
 arch=$2
 out=$3
-manifest=${4:-}
+licenses=$4
+manifest=${5:-}
 
 runtime_release=20251108
 case "$arch" in
@@ -32,12 +33,7 @@ if [[ -n "$manifest" ]]; then
 else
   install -Dm755 "$(dirname "$binary")/jayjay-ssh" "$appdir/usr/bin/jayjay-ssh"
 fi
-for license in assets/fonts/Seti.LICENSE shell/gpui/assets/fonts/Octicons.LICENSE shell/mac/Resources/ToolbarIcons.LICENSE shell/mac/Resources/DashboardIcons.LICENSE; do
-  install -Dm644 "$root/$license" "$appdir/usr/share/jayjay/licenses/$(basename "$license")"
-done
-for license in "$root"/crates/jj-diff/grammars/wasm/*.LICENSE; do
-  install -Dm644 "$license" "$appdir/usr/share/jayjay/licenses/tree-sitter-$(basename "$license")"
-done
+install -Dm644 "$licenses" "$appdir/usr/share/jayjay/Licenses.html"
 "$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"

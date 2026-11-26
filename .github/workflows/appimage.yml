@@ -12,9 +12,8 @@ on:
   pull_request:
     paths:
       - "docs/icon.svg"
-      - "dist/appimage/**"
-      - "dist/arch/**"
-      - "dist/deb/**"
+      - "dist/**"
+      - "scripts/generate-licenses.sh"
       - "shell/gpui/linux/**"
       - ".github/workflows/appimage.yml"
   release:
@@ -108,14 +107,22 @@ jobs:
           done
           grep -q "/$TAG_NAME/" ssh-helpers.json
 
+      - name: Generate license report
+        run: |
+          cargo install cargo-about --version 0.9.2 --features cli --locked
+          scripts/generate-licenses.sh ${{ matrix.arch }}-unknown-linux-gnu Licenses.html
+
       - name: Build AppImage
-        run: dist/appimage/build.sh target/release/jayjay-gpui ${{ matrix.arch }} out ${{ github.event_name == 'release' && 'ssh-helpers.json' || '' }}
+        run: dist/appimage/build.sh target/release/jayjay-gpui ${{ matrix.arch }} out Licenses.html ${{ github.event_name == 'release' && 'ssh-helpers.json' || '' }}
 
       - name: Inspect AppImage metadata
         run: |
           rm -rf squashfs-root
           ./out/jayjay-gpui-${{ matrix.arch }}.AppImage --appimage-extract >/tmp/jayjay-appimage-extract.log
           dist/appimage/libraries.sh check squashfs-root
+          cmp Licenses.html squashfs-root/usr/share/jayjay/Licenses.html
+          grep -q '<li>tree-sitter-fluent ' squashfs-root/usr/share/jayjay/Licenses.html
+          test ! -d squashfs-root/usr/share/jayjay/licenses
           ./out/jayjay-gpui-${{ matrix.arch }}.AppImage --version
           test -f squashfs-root/dev.hewig.JayJay.desktop
           test -f squashfs-root/.DirIcon

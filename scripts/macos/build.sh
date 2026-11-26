@@ -18,28 +18,8 @@ if [[ "$configuration" == Release ]]; then
   xcode JayJay Release ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
   cargo build --release -p jayjay-cli
   export JAYJAY_STRIP_APP=1
-  licenses="$app_path/Contents/Resources/Licenses.html"
-  cargo fetch --locked
-  cargo about generate --offline --locked --fail --manifest-path "$root/crates/jayjay-uniffi/Cargo.toml" \
-    --config "$root/dist/macos/about.toml" --output-file "$licenses" "$root/dist/licenses.hbs"
-  mermaid="$project/Packages/JayJayDiffUI/Sources/JayJayDiffUI/Resources/Mermaid"
-  bundled=(
-    "Sparkle $derived_data/SourcePackages/checkouts/Sparkle/LICENSE"
-    "Seti $root/assets/fonts/Seti.LICENSE"
-    "Octicons $root/shell/gpui/assets/fonts/Octicons.LICENSE"
-    "ToolbarIcons $project/Resources/ToolbarIcons.LICENSE"
-    "DashboardIcons $project/Resources/DashboardIcons.LICENSE"
-    "Ondine $mermaid/ondine-LICENSE.txt"
-    "Pele $mermaid/pele-LICENSE.txt"
-  )
-  for license in "$root"/crates/jj-diff/grammars/wasm/*.LICENSE; do
-    bundled+=("tree-sitter-$(basename "$license" .LICENSE) $license")
-  done
-  for entry in "${bundled[@]}"; do
-    printf '<h2>%s</h2>\n<pre>' "${entry%% *}"
-    sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' "${entry#* }"
-    printf '</pre>\n'
-  done >> "$licenses"
+  "$root/scripts/generate-licenses.sh" aarch64-apple-darwin "$app_path/Contents/Resources/Licenses.html" \
+    "$derived_data/SourcePackages/checkouts/Sparkle/LICENSE"
 else
   xcode JayJay Debug build
 fi
