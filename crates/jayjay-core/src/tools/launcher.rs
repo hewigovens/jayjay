@@ -34,6 +34,16 @@ pub fn open_in_editor(
                 None => return platform::open_path(&absolute),
             },
         },
+        Editor::MacVim => {
+            // open exits when Launch Services accepts the request, even while MacVim stays open.
+            return detach_stdio(
+                Command::new(editor.command())
+                    .args(editor.launch_args())
+                    .args(editor.target_args(&absolute, line)),
+            )
+            .status()
+            .is_ok_and(|status| status.success());
+        }
         Editor::Custom => EditorLaunch::from_command(
             &cfg.custom_editor_command,
             &[],

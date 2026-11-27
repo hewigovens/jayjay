@@ -4,7 +4,7 @@ import JayJayCore
 extension AppSettings {
     /// Supported external editors. Add new cases to extend — the `custom` case is always last.
     enum ExternalEditor: String, CaseIterable, Identifiable {
-        case vscode, vscodium, cursor, zed, xcode, vim, custom
+        case vscode, vscodium, cursor, zed, xcode, vim, macvim, custom
 
         var id: String {
             rawValue
@@ -18,6 +18,7 @@ extension AppSettings {
                 case .zed: "Zed"
                 case .xcode: "Xcode"
                 case .vim: "Vim"
+                case .macvim: "MacVim"
                 case .custom: Localized.Settings.custom
             }
         }
@@ -28,7 +29,7 @@ extension AppSettings {
                 case .vscodium: .asset("editor.vscodium")
                 case .cursor: .asset("editor.cursor", size: 14)
                 case .zed: .asset("editor.zed")
-                case .vim: .asset("editor.vim")
+                case .vim, .macvim: .asset("editor.vim")
                 case .xcode: .symbol("hammer.fill", size: 10.5)
                 case .custom: .symbol("chevron.left.forwardslash.chevron.right", size: 11)
             }
@@ -42,6 +43,7 @@ extension AppSettings {
                 case .zed: "zed"
                 case .xcode: "xed"
                 case .vim: "vim"
+                case .macvim: "mvim"
                 case .custom: ""
             }
         }
@@ -55,6 +57,7 @@ extension AppSettings {
                 case .cursor: "com.todesktop.230313mzl4w4u92"
                 case .zed: "dev.zed.Zed"
                 case .xcode: "com.apple.dt.Xcode"
+                case .macvim: "org.vim.MacVim"
                 default: nil
             }
         }

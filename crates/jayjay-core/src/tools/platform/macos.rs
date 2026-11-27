@@ -15,6 +15,7 @@ pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
     ("zed", "Zed"),
     ("xcode", "Xcode"),
     ("vim", "Vim"),
+    ("macvim", "MacVim"),
     ("custom", "Custom"),
 ];
 

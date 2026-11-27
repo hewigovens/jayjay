@@ -5,6 +5,10 @@ final class FileEditorScene: SceneBase {
         "file-editor"
     }
 
+    override class var additionalLaunchArguments: [String] {
+        ["-jayjay.externalEditor", "macvim"]
+    }
+
     func testWorkingCopyFileCanBeEditedAndSavedInJayJay() throws {
         let app = try XCTUnwrap(app)
         let file = fileRows(of: app)
@@ -57,6 +61,7 @@ final class FileEditorScene: SceneBase {
         XCTAssertTrue(item.waitForExistence(timeout: 5), "Expected an Edit File at Line item")
         let line = try XCTUnwrap(Int(item.title.dropFirst("Edit File at Line ".count)))
         XCTAssertGreaterThan(line, 1, "Expected a row below the first line")
+        XCTAssertTrue(app.menuItems["Open in MacVim at Line \(line)"].exists)
         item.click()
 
         let editor = app.textViews[AID.FileEditor.content]

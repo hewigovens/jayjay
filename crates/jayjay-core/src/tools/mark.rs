@@ -32,7 +32,7 @@ impl ToolMark {
             Editor::VsCodium => Self::line("editor.vscodium"),
             Editor::Cursor => Self::solid("editor.cursor"),
             Editor::Zed => Self::line("editor.zed"),
-            Editor::Vim => Self::line("editor.vim"),
+            Editor::Vim | Editor::MacVim => Self::line("editor.vim"),
             Editor::Neovim => Self::solid("editor.neovim"),
             Editor::Sublime => Self::solid("editor.sublime"),
             Editor::SystemDefault

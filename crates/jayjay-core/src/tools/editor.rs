@@ -12,6 +12,7 @@ pub(super) enum Editor {
     GnomeText,
     Kate,
     Vim,
+    MacVim,
     Neovim,
     Custom,
 }
@@ -29,6 +30,7 @@ impl Editor {
             "gnome-text-editor" => Self::GnomeText,
             "kate" => Self::Kate,
             "vim" => Self::Vim,
+            "macvim" if cfg!(target_os = "macos") => Self::MacVim,
             "nvim" => Self::Neovim,
             "custom" => Self::Custom,
             _ => return None,
@@ -43,6 +45,7 @@ impl Editor {
             Self::Cursor => "cursor",
             Self::Zed => "zed",
             Self::Vim => "vim",
+            Self::MacVim => "/usr/bin/open",
             // Xcode ships `xed` via Command Line Tools; it goes through
             // `xcode-select` so it works regardless of whether the user has
             // `Xcode.app`, `Xcode-26.4.0.app`, or a beta installed.
@@ -72,6 +75,17 @@ impl Editor {
                 vec![format!("{path}:{line}")]
             }
             Self::Xcode | Self::Kate => vec!["-l".to_owned(), line.to_string(), path.to_owned()],
+            Self::MacVim => {
+                let Ok(file_url) = url::Url::from_file_path(path) else {
+                    return vec![path.to_owned()];
+                };
+                // MacVim expects a file URL encoded inside the outer URL's query.
+                let query = url::form_urlencoded::Serializer::new(String::new())
+                    .append_pair("url", file_url.as_str())
+                    .append_pair("line", &line.to_string())
+                    .finish();
+                vec![format!("mvim://open?{query}")]
+            }
             Self::GnomeText => vec![path.to_owned(), format!("+{line}")],
             Self::Vim | Self::Neovim => vec![format!("+{line}"), path.to_owned()],
             _ => vec![path.to_owned()],
@@ -84,6 +98,7 @@ impl Editor {
             // Cursor (a VS Code fork) opens its Agent window by default when
             // launched from the CLI; `--classic` forces the editor layout.
             Self::Cursor => &["--classic"],
+            Self::MacVim => &["-b", "org.vim.MacVim"],
             _ => &[],
         }
     }
@@ -114,6 +129,23 @@ mod tests {
         assert_eq!(at_line(Editor::GnomeText), ["/r/a.rs", "+7"]);
         assert_eq!(at_line(Editor::Custom), ["/r/a.rs"]);
         assert_eq!(Editor::Zed.target_args("/r/a.rs", None), ["/r/a.rs"]);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macvim_opens_special_paths_at_the_requested_line() {
+        let path = "/r/a +&?#%.rs";
+        let args = Editor::MacVim.target_args(path, Some(42));
+        let url = url::Url::parse(&args[0]).unwrap();
+        assert_eq!(url.scheme(), "mvim");
+        assert_eq!(url.host_str(), Some("open"));
+        let query: std::collections::HashMap<_, _> = url.query_pairs().collect();
+        let file = url::Url::parse(&query["url"])
+            .unwrap()
+            .to_file_path()
+            .unwrap();
+        assert_eq!(file.to_str(), Some(path));
+        assert_eq!(query["line"], "42");
     }
 
     #[test]
