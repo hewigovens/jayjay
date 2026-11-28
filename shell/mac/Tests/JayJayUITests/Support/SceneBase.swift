@@ -118,6 +118,7 @@ class SceneBase: XCTestCase {
         for (key, value) in Self.launchEnvironment {
             app.launchEnvironment[key] = value
         }
+        dismissJayJayNotifications()
         app.launch()
         self.app = app
         XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10), "JayJay window did not appear")
@@ -196,6 +197,21 @@ class SceneBase: XCTestCase {
             file: file,
             line: line
         )
+    }
+
+    /// A machine's first launch of a build posts a persistent "Dock Tile Extension Added" alert over the top-right of the screen, where a click opens System Settings instead of reaching the app.
+    private func dismissJayJayNotifications() {
+        let alerts = XCUIApplication(bundleIdentifier: "com.apple.notificationcenterui").dialogs.scrollViews.groups
+            .matching(NSPredicate(format: "label CONTAINS 'JayJay'"))
+        // Last to first, since closing an alert moves the ones after it up an index.
+        for alert in alerts.allElementsBoundByIndex.reversed() {
+            // The close button only joins the accessibility tree while the pointer is over the alert.
+            alert.hover()
+            let close = alert.buttons["Close"]
+            if close.waitForExistence(timeout: 2) {
+                close.click()
+            }
+        }
     }
 
     func clickDockItem(file: StaticString = #filePath, line: UInt = #line) {
