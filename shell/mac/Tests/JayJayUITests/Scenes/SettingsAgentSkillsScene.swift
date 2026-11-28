@@ -16,10 +16,7 @@ final class SettingsAgentSkillsScene: SceneBase {
         XCTAssertEqual(toggle.value as? Int, 0)
         toggle.click()
         assertSkillValue(1, toggle: toggle)
-        let screenshot = XCTAttachment(screenshot: window.screenshot())
-        screenshot.name = "Coding Agents - installed"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(window, name: "Coding Agents - installed")
 
         selectSettingsPage("workflow", in: app)
         selectSettingsPage("integrations", in: app)

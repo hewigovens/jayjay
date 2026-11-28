@@ -23,10 +23,7 @@ final class RepositoryPickerPinningScene: SceneBase {
             row.rightClick()
             let item = app.menuItems[action]
             XCTAssertTrue(item.waitForExistence(timeout: 5))
-            let screenshot = XCTAttachment(screenshot: repoWindow.screenshot())
-            screenshot.name = "Repository picker - \(action)"
-            screenshot.lifetime = .keepAlways
-            add(screenshot)
+            capture(repoWindow, name: "Repository picker - \(action)")
             item.click()
             XCTAssertTrue(row.waitForNonExistence(timeout: 5))
             XCTAssertEqual(app.windows.count, 1)

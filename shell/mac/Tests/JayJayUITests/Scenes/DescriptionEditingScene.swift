@@ -25,10 +25,7 @@ final class DescriptionEditingScene: SceneBase {
         XCTAssertGreaterThan(initialSummary.count, 200)
         XCTAssertGreaterThan(app.buttons["Edit description"].frame.minX, preview.frame.minX)
         XCTAssertLessThanOrEqual(app.buttons["Edit description"].frame.maxY, preview.frame.maxY)
-        let previewScreenshot = XCTAttachment(screenshot: preview.screenshot())
-        previewScreenshot.name = "Edit beside wrapped title"
-        previewScreenshot.lifetime = .keepAlways
-        add(previewScreenshot)
+        capture(preview, name: "Edit beside wrapped title")
         app.buttons["Edit description"].click()
         let sheet = app.sheets.firstMatch
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))
@@ -36,10 +33,7 @@ final class DescriptionEditingScene: SceneBase {
         let body = sheet.textViews[AID.CommitBox.draft]
         XCTAssertEqual(summary.value as? String, initialSummary)
         XCTAssertEqual(body.value as? String, "    Editable body")
-        let screenshot = XCTAttachment(screenshot: sheet.screenshot())
-        screenshot.name = "Long summary initial caret"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(sheet, name: "Long summary initial caret")
         paste(" appended")
         XCTAssertEqual(summary.value as? String, initialSummary + " appended")
         body.click()

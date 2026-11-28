@@ -34,9 +34,6 @@ final class SummaryTypingScene: SceneBase {
             prefix.append(character)
             XCTAssertEqual(summary.value as? String, prefix + text, "Typing must stay at the clicked insertion point")
         }
-        let attachment = XCTAttachment(screenshot: summary.screenshot())
-        attachment.name = "Summary after refocusing at the start and typing"
-        attachment.lifetime = .keepAlways
-        add(attachment)
+        capture(summary, name: "Summary after refocusing at the start and typing")
     }
 }

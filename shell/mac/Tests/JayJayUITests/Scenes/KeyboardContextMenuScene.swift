@@ -82,9 +82,6 @@ final class KeyboardContextMenuScene: SceneBase {
 
     private func captureMenu(_ name: String) {
         guard let window = app?.windows.firstMatch else { return }
-        let attachment = XCTAttachment(screenshot: window.screenshot())
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
+        capture(window, name: name)
     }
 }

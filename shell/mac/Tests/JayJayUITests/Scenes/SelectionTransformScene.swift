@@ -63,10 +63,7 @@ final class SelectionTransformScene: SceneBase {
         mergeThree.hover()
         let choice = app.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", firstParentPrefix)).firstMatch
         XCTAssertTrue(choice.waitForExistence(timeout: 5), "First-parent submenu missing")
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Merge first-parent submenu"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(app, name: "Merge first-parent submenu")
         choice.click()
         let merged = NSPredicate { _, _ in
             let selected = rows.allElementsBoundByIndex.filter(\.isSelected)

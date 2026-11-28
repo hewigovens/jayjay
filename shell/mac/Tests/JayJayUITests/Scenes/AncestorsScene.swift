@@ -18,10 +18,7 @@ final class AncestorsScene: SceneBase {
         XCTAssertTrue(filter.exists)
         XCTAssertTrue((filter.value as? String)?.hasPrefix("::change_id(") == true)
 
-        let screenshot = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        screenshot.name = "Show ancestors filter"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(app.windows.firstMatch, name: "Show ancestors filter")
 
         app.buttons["Back to previous filter"].click()
         XCTAssertTrue(newer.waitForExistence(timeout: 10))

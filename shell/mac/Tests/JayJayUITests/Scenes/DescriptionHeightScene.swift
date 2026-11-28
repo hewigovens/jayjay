@@ -65,10 +65,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertGreaterThan(compactHeight, 0)
         XCTAssertLessThanOrEqual(compactHeight, file.frame.height)
         XCTAssertTrue(scroll.exists, "Long descriptions must scroll")
-        let compact = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        compact.name = "Compact description"
-        compact.lifetime = .keepAlways
-        add(compact)
+        capture(app.windows.firstMatch, name: "Compact description")
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.click()
         let expandedHeight = scroll.frame.height
@@ -79,10 +76,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertTrue(file.isHittable)
         XCTAssertTrue(diff.isHittable)
         XCTAssertGreaterThanOrEqual(diff.frame.minY, description.frame.maxY)
-        let expanded = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        expanded.name = "Expanded description with visible diff"
-        expanded.lifetime = .keepAlways
-        add(expanded)
+        capture(app.windows.firstMatch, name: "Expanded description with visible diff")
         XCTAssertEqual(toggle.label, "Collapse description")
         toggle.click()
         XCTAssertEqual(scroll.frame.height, compactHeight, accuracy: 1)

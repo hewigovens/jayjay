@@ -21,7 +21,7 @@ final class SettingsFontsScene: SceneBase {
         XCTAssertTrue(window.element(AID.Settings.preview).exists, "Preview missing")
         XCTAssertEqual(codeSize.value as? String, "14 pt")
         XCTAssertFalse(window.element(AID.Settings.codeLigatures).isEnabled, "Menlo has no ligatures")
-        attachScreenshot(of: window, named: "Code Font - migrated")
+        capture(window, name: "Code Font - migrated")
 
         let steppers = window.steppers
         steppers.element(boundBy: 1).incrementArrows.firstMatch.click()
@@ -29,19 +29,12 @@ final class SettingsFontsScene: SceneBase {
         XCTAssertEqual(codeSize.value as? String, "15 pt")
         XCTAssertEqual(lineSpacing.value as? String, "1.1")
         codeSize.scroll(byDeltaX: 0, deltaY: -600)
-        attachScreenshot(of: window, named: "Code Font - adjusted")
+        capture(window, name: "Code Font - adjusted")
 
         window.buttons[AID.Settings.resetFonts].click()
         XCTAssertEqual(codeSize.value as? String, "12 pt")
         XCTAssertEqual(lineSpacing.value as? String, "1.0")
         XCTAssertEqual(interfaceSize.value as? String, "12 pt", "Reset Fonts also resets the interface font")
-        attachScreenshot(of: window, named: "Fonts - reset")
-    }
-
-    private func attachScreenshot(of window: XCUIElement, named name: String) {
-        let screenshot = XCTAttachment(screenshot: window.screenshot())
-        screenshot.name = name
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(window, name: "Fonts - reset")
     }
 }

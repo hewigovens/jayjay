@@ -22,10 +22,7 @@ final class OpenRemoteRepositoryScene: SceneBase {
         paste("alice@development-machine-with-a-long-name.example.com")
         XCTAssertTrue(connect.isEnabled)
         XCTAssertTrue(window.buttons[AID.OpenRemoteRepository.open].isHittable)
-        let screenshot = XCTAttachment(screenshot: window.screenshot())
-        screenshot.name = "Remote repository picker"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        capture(window, name: "Remote repository picker")
 
         keyStroke(.escape)
         XCTAssertTrue(window.waitForNonExistence(timeout: 5))

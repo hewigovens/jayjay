@@ -4,6 +4,7 @@ import XCTest
 class SceneBase: XCTestCase {
     var app: XCUIApplication?
     private(set) var fixtureURL: URL?
+    private var isSavingFailure = false
 
     class var fixtureName: String {
         "simple"
@@ -68,7 +69,8 @@ class SceneBase: XCTestCase {
         let recentRevsetsPath = root.appendingPathComponent("\(Self.fixtureName)-\(Self.self)-recent-revsets.json").path
         try? FileManager.default.removeItem(atPath: recentRevsetsPath)
 
-        let app = XCUIApplication()
+        // A runner launched without Xcode has no test configuration naming the app.
+        let app = ProcessInfo.processInfo.environment["JAYJAY_UI_TEST_APP"].map { XCUIApplication(url: URL(fileURLWithPath: $0)) } ?? XCUIApplication()
         app.launchEnvironment["JAYJAY_FLOCK_PATH"] = root.appendingPathComponent("flock-empty.json").path
         // Ignore restored windows so each test controls its initial app state.
         app.launchArguments = Self.ignoresWindowRestoration
@@ -273,11 +275,35 @@ class SceneBase: XCTestCase {
         page.click()
     }
 
-    func capture(_ window: XCUIElement, name: String) {
-        let attachment = XCTAttachment(screenshot: window.screenshot())
+    func capture(_ element: XCUIElement, name: String) {
+        let screenshot = element.screenshot()
+        save(screenshot.pngRepresentation, as: "\(name).png")
+        let attachment = XCTAttachment(screenshot: screenshot)
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    override func record(_ issue: XCTIssue) {
+        // Capturing can report an issue of its own, which must not capture again.
+        if !isSavingFailure {
+            isSavingFailure = true
+            save(XCUIScreen.main.screenshot().pngRepresentation, as: "failure.png")
+            if let app, app.state != .notRunning {
+                save(Data(app.debugDescription.utf8), as: "failure.txt")
+            }
+            isSavingFailure = false
+        }
+        super.record(issue)
+    }
+
+    /// A run without Xcode has no result bundle, so its launcher names a directory the sandboxed runner can write.
+    private func save(_ data: @autoclosure () -> Data, as fileName: String) {
+        guard let artifacts = ProcessInfo.processInfo.environment["JAYJAY_UI_TEST_ARTIFACTS"] else { return }
+        let test = name.trimmingCharacters(in: CharacterSet(charactersIn: "-[]")).replacingOccurrences(of: " ", with: "/")
+        let directory = URL(fileURLWithPath: artifacts, isDirectory: true).appendingPathComponent(test, isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? data().write(to: directory.appendingPathComponent(fileName))
     }
 
     // MARK: - Key input

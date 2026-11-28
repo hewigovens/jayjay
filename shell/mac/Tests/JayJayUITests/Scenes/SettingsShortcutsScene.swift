@@ -8,14 +8,14 @@ final class SettingsShortcutsScene: SceneBase {
     func testRebindConflictAndReset() throws {
         let app = try XCTUnwrap(app)
         app.menuBars.menuBarItems["View"].click()
-        attach(app.menuItems["Refresh"], name: "Refresh menu before rebind")
+        capture(app.menuItems["Refresh"], name: "Refresh menu before rebind")
         keyStroke(XCUIKeyboardKey.escape.rawValue)
         keyStroke("/", modifiers: [.command])
         app.buttons["Customize Shortcuts"].click()
         let window = settingsWindow(in: app)
         let search = window.textFields[AID.Shortcuts.search]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
-        attach(window, name: "Shortcuts settings")
+        capture(window, name: "Shortcuts settings")
         search.click()
         paste("Refresh")
         let edit = window.buttons[AID.Shortcuts.edit("repo.refresh")]
@@ -24,7 +24,7 @@ final class SettingsShortcutsScene: SceneBase {
         keyStroke("r", modifiers: [.shift, .command])
         XCTAssertTrue(window.buttons[AID.Shortcuts.reset("repo.refresh")].waitForExistence(timeout: 5))
         app.menuBars.menuBarItems["View"].click()
-        attach(app.menuItems["Refresh"], name: "Refresh menu after rebind")
+        capture(app.menuItems["Refresh"], name: "Refresh menu after rebind")
         keyStroke(XCUIKeyboardKey.escape.rawValue)
         edit.click()
         search.click()
@@ -36,17 +36,17 @@ final class SettingsShortcutsScene: SceneBase {
         XCTAssertTrue(window.staticTexts[AID.Shortcuts.message].waitForExistence(timeout: 5))
         XCTAssertTrue(window.buttons[AID.Shortcuts.replace].exists)
         XCTAssertTrue((window.staticTexts[AID.Shortcuts.message].value as? String ?? "").contains("Filter by Revset (Repository Window)"))
-        attach(window, name: "Shortcuts conflict")
+        capture(window, name: "Shortcuts conflict")
         keyStroke(.escape)
         XCTAssertFalse(window.staticTexts[AID.Shortcuts.message].exists)
         edit.click()
         keyStroke("l", modifiers: [.command])
         window.buttons[AID.Shortcuts.replace].click()
         app.menuBars.menuBarItems["View"].click()
-        attach(app.menuItems["Refresh"], name: "Refresh menu after replacement")
+        capture(app.menuItems["Refresh"], name: "Refresh menu after replacement")
         keyStroke(XCUIKeyboardKey.escape.rawValue)
         app.menuBars.menuBarItems["Repository"].click()
-        attach(app.menuItems["Filter by Revset…"], name: "Filter menu after replacement")
+        capture(app.menuItems["Filter by Revset…"], name: "Filter menu after replacement")
         keyStroke(XCUIKeyboardKey.escape.rawValue)
         search.click()
         keyStroke("a", modifiers: [.command])
@@ -109,12 +109,5 @@ final class SettingsShortcutsScene: SceneBase {
         keyStroke("a", modifiers: [.command])
         keyStroke(.delete)
         finalSettings.buttons[AID.Shortcuts.resetAll].click()
-    }
-
-    private func attach(_ window: XCUIElement, name: String) {
-        let attachment = XCTAttachment(screenshot: window.screenshot())
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
     }
 }
