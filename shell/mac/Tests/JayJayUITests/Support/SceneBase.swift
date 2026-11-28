@@ -203,6 +203,8 @@ class SceneBase: XCTestCase {
     private func dismissJayJayNotifications() {
         let alerts = XCUIApplication(bundleIdentifier: "com.apple.notificationcenterui").dialogs.scrollViews.groups
             .matching(NSPredicate(format: "label CONTAINS 'JayJay'"))
+        // CI runners have no Notification Center: an existence check stays quiet there, while listing the alerts would fail the test.
+        guard alerts.firstMatch.exists else { return }
         // Last to first, since closing an alert moves the ones after it up an index.
         for alert in alerts.allElementsBoundByIndex.reversed() {
             // The close button only joins the accessibility tree while the pointer is over the alert.
